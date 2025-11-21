@@ -7,14 +7,14 @@ echo -------------------------------------------------
 
 echo Cleaning previous build...
 cargo clean
-echo Cleaning completed successfully.
 
-:: Load .env file (first line)
+echo Loading .env file...
 if not exist .env (
     echo ERROR: .env file not found.
     exit /b 1
 )
 
+echo Resolving XPLANE_PLUGIN_DIR variable from .env file...
 for /f "usebackq tokens=1,2 delims==" %%A in ("./.env") do (
     if "%%A"=="XPLANE_PLUGIN_DIR" (
         set XPLANE_PLUGIN_DIR=%%~B
