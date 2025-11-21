@@ -51,10 +51,10 @@ if __name__ == "__main__":
 
     try:
         for i in range(5):
-            msg = f"hello message {i}".encode()
+            msg = f"hello message {i}"
 
             print(f"➡️ sending message {i}: {msg}")
-            resp = client.send_and_recv(msg)
+            resp = client.send_and_recv(msg.encode())
 
             if resp:
                 print(f"⬅️ received message {i}: {resp}")

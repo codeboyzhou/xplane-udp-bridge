@@ -88,11 +88,10 @@ fn main() {
     // Send 5 test messages to server
     for i in 0..5 {
         let msg = format!("hello message {}", i);
-        let data = msg.as_bytes();
 
-        println!("➡️ sending message {}: {:?}", i, data);
+        println!("➡️ sending message {}: {}", i, msg);
 
-        let resp = client.send_and_recv(data);
+        let resp = client.send_and_recv(msg.as_bytes());
 
         // Print result
         match resp {

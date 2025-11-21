@@ -7,9 +7,23 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 use tracing::{error, info};
 
+trait MessageHandler: Send + Sync + 'static {
+    fn handle(&self, src: SocketAddr, bytes: &[u8]);
+}
+
+struct DefaultMessageHandler;
+
+impl MessageHandler for DefaultMessageHandler {
+    fn handle(&self, src: SocketAddr, bytes: &[u8]) {
+        let data = std::str::from_utf8(bytes).unwrap();
+        info!("udp default message handler received from {}: {}", src, data);
+    }
+}
+
 struct UdpServer {
     running: Arc<AtomicBool>,
     server_thread_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
+    message_handler: Arc<dyn MessageHandler>,
 }
 
 impl UdpServer {
@@ -17,6 +31,7 @@ impl UdpServer {
         Self {
             running: Arc::new(AtomicBool::new(false)),
             server_thread_handle: Arc::new(Mutex::new(None)),
+            message_handler: Arc::new(DefaultMessageHandler {}),
         }
     }
     fn start(&self, port: u16) {
@@ -50,12 +65,11 @@ impl UdpServer {
         self.running.store(true, Ordering::SeqCst);
 
         info!("udp server listening on {} with blocking mode", addr);
-        
+
         while self.running.load(Ordering::SeqCst) {
             match socket.recv_from(&mut buffer) {
                 Ok((size, src)) => {
-                    let data = std::str::from_utf8(&buffer[..size]).unwrap();
-                    info!("udp server received {} bytes from {}: {}", size, src, data);
+                    self.message_handler.handle(src, &buffer[..size]);
                 }
                 Err(ref e) if e.kind() == WouldBlock || e.kind() == TimedOut => {
                     // no data received, just continue to wait for next read

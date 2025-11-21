@@ -2,7 +2,7 @@ use crate::plugin;
 use chrono::Local;
 use std::fs::OpenOptions;
 use std::sync::Once;
-use tracing::{info, Level};
+use tracing::{Level, info};
 use tracing_subscriber::fmt::format::Writer;
 use tracing_subscriber::fmt::time::FormatTime;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
