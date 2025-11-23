@@ -10,7 +10,7 @@ impl<'a> Reader<'a> {
     }
 
     pub(crate) fn read_as_float(&self, dataref: &str) -> Result<f64, String> {
-        let data = format!("xplane_udp_bridge_plugin:datarefs:read:{}", dataref);
+        let data = format!("xplane_udp_bridge_plugin:dataref:read:{}", dataref);
         println!("➡️ Sending dataref read request: {}", data);
 
         let resp = self.udp_client.send_and_recv(data.as_bytes());

@@ -1,4 +1,4 @@
-mod datarefs;
+mod dataref;
 
 use std::io;
 use std::io::ErrorKind;
@@ -80,12 +80,12 @@ fn main() {
     // Create UDP client
     let client = UdpClient::new("127.0.0.1", 49000, 3.0).expect("Failed to create UDP client");
 
+    // Create dataref reader
+    let dataref_reader = dataref::Reader::new(&client);
+    
     loop {
-        // Create datarefs handler
-        let datarefs_reader = datarefs::Reader::new(&client);
-
         // Read dataref value examples
-        match datarefs_reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio") {
+        match dataref_reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio") {
             Ok(value) => println!("⬅️ received dataref value: {}", value),
             Err(err_msg) => eprintln!("Error reading dataref: {}", err_msg),
         }
