@@ -29,6 +29,21 @@ if "%XPLANE_PLUGIN_DIR%"=="" (
 echo Using X-Plane plugin directory:
 echo    %XPLANE_PLUGIN_DIR%
 
+echo Resolving LIBCLANG_PATH variable from .env file...
+for /f "usebackq tokens=1,2 delims==" %%A in ("./.env") do (
+    if "%%A"=="LIBCLANG_PATH" (
+        set LIBCLANG_PATH=%%~B
+    )
+)
+
+if "%LIBCLANG_PATH%"=="" (
+    echo ERROR: LIBCLANG_PATH not found in .env file.
+    exit /b 1
+)
+
+echo Using libclang path:
+echo    %LIBCLANG_PATH%
+
 echo Building release...
 cargo build --release
 if %ERRORLEVEL% NEQ 0 (

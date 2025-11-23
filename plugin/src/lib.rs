@@ -1,31 +1,39 @@
 mod logger;
 mod plugin;
-mod safe;
 mod udp;
 
-use std::ffi::CString;
-use std::os::raw::{c_char, c_int};
+use crate::plugin::PluginError;
 use tracing::info;
+use xplm::plugin::{Plugin, PluginInfo};
 
-#[unsafe(no_mangle)]
-pub extern "C" fn XPluginStart(
-    plugin_name: *mut c_char,
-    plugin_signature: *mut c_char,
-    plugin_description: *mut c_char,
-) -> c_int {
-    logger::init();
-    info!("{} starting...", plugin::NAME);
-    safe::write_c_char(plugin_name, &CString::new(plugin::NAME).unwrap());
-    safe::write_c_char(plugin_signature, &CString::new(plugin::SIGNATURE).unwrap());
-    safe::write_c_char(plugin_description, &CString::new(plugin::DESCRIPTION).unwrap());
-    info!("{} started successfully", plugin::NAME);
-    udp::start_udp_server(plugin::UDP_SERVER_PORT);
-    plugin::STARTED
+struct XPlaneUdpBridgePlugin;
+
+impl Plugin for XPlaneUdpBridgePlugin {
+    type Error = PluginError;
+
+    fn start() -> Result<Self, Self::Error> {
+        logger::init();
+        info!("{} plugin starting...", plugin::NAME);
+        udp::start_udp_server(plugin::UDP_SERVER_PORT);
+        info!("{} plugin started successfully", plugin::NAME);
+        Ok(Self {})
+    }
+
+    fn info(&self) -> PluginInfo {
+        PluginInfo {
+            name: String::from(plugin::NAME),
+            signature: String::from(plugin::SIGN),
+            description: String::from(plugin::DESC),
+        }
+    }
 }
 
-#[unsafe(no_mangle)]
-pub extern "C" fn XPluginStop() {
-    info!("{} stopping...", plugin::NAME);
-    udp::stop_udp_server();
-    info!("{} stopped successfully", plugin::NAME);
+impl Drop for XPlaneUdpBridgePlugin {
+    fn drop(&mut self) {
+        info!("{} plugin dropping...", plugin::NAME);
+        udp::stop_udp_server();
+        info!("{} plugin dropped successfully", plugin::NAME);
+    }
 }
+
+xplm::xplane_plugin!(XPlaneUdpBridgePlugin);
