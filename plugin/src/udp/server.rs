@@ -100,7 +100,7 @@ fn get_udp_server() -> &'static UdpServer {
     UDP_SERVER.get_or_init(|| UdpServer::new())
 }
 
-pub(crate) fn start_udp_server(port: u16) {
+pub(crate) fn start(port: u16) {
     let udp_server = get_udp_server();
     let server_thread_handle = thread::Builder::new()
         .name("udp-server".to_string())
@@ -109,7 +109,7 @@ pub(crate) fn start_udp_server(port: u16) {
     *udp_server.server_thread_handle.lock().unwrap() = Some(server_thread_handle);
 }
 
-pub(crate) fn stop_udp_server() {
+pub(crate) fn stop() {
     get_udp_server().stop();
 }
 
@@ -121,13 +121,13 @@ mod tests {
     #[test]
     fn test_start_udp_server() {
         let port = 49000;
-        let result = catch_unwind(|| udp::start_udp_server(port));
+        let result = catch_unwind(|| udp::server::start(port));
         assert!(result.is_ok(), "test failed: udp server start should not panic");
     }
 
     #[test]
     fn test_stop_udp_server() {
-        let result = catch_unwind(|| udp::stop_udp_server());
+        let result = catch_unwind(|| udp::server::stop());
         assert!(result.is_ok(), "test failed: udp server stop should not panic");
     }
 }

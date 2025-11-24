@@ -14,7 +14,7 @@ impl Plugin for XPlaneUdpBridgePlugin {
     fn start() -> Result<Self, Self::Error> {
         logger::init();
         info!("{} plugin starting...", plugin::NAME);
-        udp::start_udp_server(plugin::UDP_SERVER_PORT);
+        udp::server::start(plugin::UDP_SERVER_PORT);
         info!("{} plugin started successfully", plugin::NAME);
         Ok(Self {})
     }
@@ -31,7 +31,7 @@ impl Plugin for XPlaneUdpBridgePlugin {
 impl Drop for XPlaneUdpBridgePlugin {
     fn drop(&mut self) {
         info!("{} plugin dropping...", plugin::NAME);
-        udp::stop_udp_server();
+        udp::server::stop();
         info!("{} plugin dropped successfully", plugin::NAME);
     }
 }
