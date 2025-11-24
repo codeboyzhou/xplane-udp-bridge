@@ -9,7 +9,7 @@ pub(crate) const SIGN: &str = "https://github.com/codeboyzhou/xplane-udp-bridge"
 pub(crate) const DESC: &str = "This plugin allows you to communicate with X-Plane 12 via UDP.";
 
 #[derive(Debug)]
-pub struct PluginError {
+pub(crate) struct PluginError {
     message: String,
 }
 

@@ -17,7 +17,7 @@ impl FormatTime for LocalTime {
 
 static LOGGER_INITIALIZED: Once = Once::new();
 
-pub fn init() {
+pub(crate) fn init() {
     LOGGER_INITIALIZED.call_once(|| {
         let filename = plugin::NAME.to_string() + ".log";
         let file = OpenOptions::new().create(true).append(true).open(filename).unwrap();

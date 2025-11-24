@@ -100,7 +100,7 @@ fn get_udp_server() -> &'static UdpServer {
     UDP_SERVER.get_or_init(|| UdpServer::new())
 }
 
-pub fn start_udp_server(port: u16) {
+pub(crate) fn start_udp_server(port: u16) {
     let udp_server = get_udp_server();
     let server_thread_handle = thread::Builder::new()
         .name("udp-server".to_string())
@@ -109,7 +109,7 @@ pub fn start_udp_server(port: u16) {
     *udp_server.server_thread_handle.lock().unwrap() = Some(server_thread_handle);
 }
 
-pub fn stop_udp_server() {
+pub(crate) fn stop_udp_server() {
     get_udp_server().stop();
 }
 
