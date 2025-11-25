@@ -9,8 +9,8 @@ impl<'a> Reader<'a> {
         Self { udp_client }
     }
 
-    pub(crate) fn read_as_float(&self, dataref: &str) -> Result<f64, String> {
-        let data = format!("xplane_udp_bridge_plugin:dataref:read:{}", dataref);
+    pub(crate) fn read_as_float(&self, dataref: &str) -> Result<f32, String> {
+        let data = format!("dataref|read|float|{}", dataref);
         println!("➡️ Sending dataref read request: {}", data);
 
         let resp = self.udp_client.send_and_recv(data.as_bytes());
@@ -18,7 +18,7 @@ impl<'a> Reader<'a> {
             Some(resp_body_as_bytes) => {
                 let data = std::str::from_utf8(resp_body_as_bytes.as_slice()).unwrap();
                 let value = data
-                    .parse::<f64>()
+                    .parse::<f32>()
                     .map_err(|e| format!("❌ Failed to parse dataref value: {:?}", e))?;
                 println!("⬅️ Received dataref value: {}", value);
                 Ok(value)
