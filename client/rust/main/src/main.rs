@@ -82,7 +82,7 @@ fn main() {
 
     // Create dataref reader
     let dataref_reader = dataref::Reader::new(&client);
-    
+
     loop {
         // Read dataref value examples
         match dataref_reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio") {

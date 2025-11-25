@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo -------------------------------------------------
-echo           Building Rust X-Plane Plugin
+echo      Building Rust X-Plane UDP Bridge Plugin
 echo -------------------------------------------------
 
 echo Cleaning previous build...
@@ -64,7 +64,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 set SRC=target\release\xplane_udp_bridge_plugin.dll
-set DEST=%XPLANE_PLUGIN_DIR%\xplane-udp-bridge\64
+set DEST=%XPLANE_PLUGIN_DIR%\XPlaneUdpBridge\64
 
 if not exist "%SRC%" (
     echo ERROR: %SRC% does not exist.
