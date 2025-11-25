@@ -10,7 +10,6 @@ pub(crate) trait MessageHandler: Send + Sync + 'static {
 }
 
 pub(crate) struct DataRefReader<T> {
-    type_selector: &'static str,
     phantom_data: PhantomData<T>,
 }
 
@@ -19,8 +18,8 @@ where
     T: DataType + Debug + Send + Sync + 'static,
     DataRef<T, ReadOnly>: DataRead<T>,
 {
-    pub(crate) fn new(type_selector: &'static str) -> Self {
-        Self { type_selector, phantom_data: PhantomData }
+    pub(crate) fn new() -> Self {
+        Self { phantom_data: PhantomData }
     }
 }
 
@@ -30,20 +29,21 @@ where
     DataRef<T, ReadOnly>: DataRead<T>,
 {
     fn handle(&self, src: SocketAddr, payload: &str, socket: &UdpSocket) {
-        info!("{} received message from {}: {}", self.type_selector, src, payload);
+        let type_name = std::any::type_name::<T>();
+        info!("DataRefReader<{}> received message from {}: {}", type_name, src, payload);
         match DataRef::<T, ReadOnly>::find(payload) {
             Ok(dataref) => {
                 let response = format!("{:?}", dataref.get());
-                info!("{} read value {:?}", self.type_selector, response);
+                info!("DataRefReader<{}> read value {:?}", type_name, response);
                 if let Err(e) = socket.send_to(response.as_bytes(), src) {
-                    error!("{} failed to send response: {:?}", self.type_selector, e);
+                    error!("DataRefReader<{}> failed to send response: {:?}", type_name, e);
                 }
             }
             Err(e) => {
-                let msg = format!("dataref read error for {}: {:?}", payload, e);
-                error!("{}", msg);
+                let msg = format!("read error for {}: {:?}", payload, e);
+                error!("DataRefReader<{}> {}", type_name, msg);
                 if let Err(e) = socket.send_to(msg.as_bytes(), src) {
-                    error!("{} failed to send error response: {:?}", self.type_selector, e);
+                    error!("DataRefReader<{}> failed to send error response: {:?}", type_name, e);
                 }
             }
         }
