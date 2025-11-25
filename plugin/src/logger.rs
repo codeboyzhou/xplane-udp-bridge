@@ -1,4 +1,4 @@
-use crate::plugin;
+use crate::XPlaneUdpBridgePlugin;
 use chrono::Local;
 use std::fs::OpenOptions;
 use std::sync::Once;
@@ -19,7 +19,7 @@ static LOGGER_INITIALIZED: Once = Once::new();
 
 pub(crate) fn init() {
     LOGGER_INITIALIZED.call_once(|| {
-        let filename = plugin::NAME.to_string() + ".log";
+        let filename = XPlaneUdpBridgePlugin::NAME.to_string() + ".log";
         let file = OpenOptions::new().create(true).append(true).open(filename).unwrap();
         let writer = BoxMakeWriter::new(file);
         tracing_subscriber::fmt()
@@ -38,14 +38,14 @@ pub(crate) fn init() {
 
 #[cfg(test)]
 mod tests {
-    use crate::{logger, plugin};
+    use crate::{XPlaneUdpBridgePlugin, logger};
     use std::fs;
     use tracing::info;
 
     #[test]
     fn test_logger_init_create_log_file_and_write() {
         let dir = std::env::current_dir().unwrap();
-        let filename = plugin::NAME.to_string() + ".log";
+        let filename = XPlaneUdpBridgePlugin::NAME.to_string() + ".log";
         let log_file_path = dir.join(filename);
 
         logger::init();

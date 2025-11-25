@@ -1,3 +1,4 @@
+use crate::udp::message::dispatcher::MessageDispatcher;
 use std::io::ErrorKind::{TimedOut, WouldBlock};
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -7,23 +8,10 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 use tracing::{error, info};
 
-trait MessageHandler: Send + Sync + 'static {
-    fn handle(&self, src: SocketAddr, bytes: &[u8]);
-}
-
-struct DefaultMessageHandler;
-
-impl MessageHandler for DefaultMessageHandler {
-    fn handle(&self, src: SocketAddr, bytes: &[u8]) {
-        let data = std::str::from_utf8(bytes).unwrap();
-        info!("udp default message handler received from {}: {}", src, data);
-    }
-}
-
 struct UdpServer {
     running: Arc<AtomicBool>,
     server_thread_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
-    message_handler: Arc<dyn MessageHandler>,
+    message_dispatcher: Arc<MessageDispatcher>,
 }
 
 impl UdpServer {
@@ -31,11 +19,13 @@ impl UdpServer {
         Self {
             running: Arc::new(AtomicBool::new(false)),
             server_thread_handle: Arc::new(Mutex::new(None)),
-            message_handler: Arc::new(DefaultMessageHandler {}),
+            message_dispatcher: Arc::new(MessageDispatcher::new()),
         }
     }
+
     fn start(&self, port: u16) {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
+
         if self.running.load(Ordering::SeqCst) {
             info!("udp server is already running on {}", addr);
             return;
@@ -69,7 +59,8 @@ impl UdpServer {
         while self.running.load(Ordering::SeqCst) {
             match socket.recv_from(&mut buffer) {
                 Ok((size, src)) => {
-                    self.message_handler.handle(src, &buffer[..size]);
+                    let message = std::str::from_utf8(&buffer[..size]).unwrap();
+                    self.message_dispatcher.dispatch(src, message, &socket);
                 }
                 Err(ref e) if e.kind() == WouldBlock || e.kind() == TimedOut => {
                     // no data received, just continue to wait for next read
@@ -97,7 +88,7 @@ impl UdpServer {
 static UDP_SERVER: OnceLock<UdpServer> = OnceLock::new();
 
 fn get_udp_server() -> &'static UdpServer {
-    UDP_SERVER.get_or_init(|| UdpServer::new())
+    UDP_SERVER.get_or_init(UdpServer::new)
 }
 
 pub(crate) fn start(port: u16) {

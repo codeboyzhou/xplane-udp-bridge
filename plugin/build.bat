@@ -44,6 +44,18 @@ if "%LIBCLANG_PATH%"=="" (
 echo Using libclang path:
 echo    %LIBCLANG_PATH%
 
+echo Running: cargo fmt
+cargo fmt
+echo Finished: cargo fmt
+
+echo Running: cargo clippy
+cargo clippy --no-deps
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Cargo clippy failed.
+    exit /b %ERRORLEVEL%
+)
+echo Finished: cargo clippy
+
 echo Building release...
 cargo build --release
 if %ERRORLEVEL% NEQ 0 (
