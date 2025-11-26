@@ -9,7 +9,7 @@ pub(crate) struct MessageFormat {
 }
 
 impl MessageFormat {
-    const MESSAGE_PARTS_SEPARATOR: char = '|';
+    pub(crate) const MESSAGE_PARTS_SEPARATOR: &'static str = "|";
 
     const MESSAGE_PARTS_LEN: usize = 4;
 

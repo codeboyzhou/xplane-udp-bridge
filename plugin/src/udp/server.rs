@@ -1,4 +1,11 @@
+//! # UDP Server Module
+//!
+//! This module provides UDP server functionality for the X-Plane UDP Bridge plugin.
+//! It handles incoming UDP messages, dispatches them to appropriate handlers,
+//! and sends responses back to clients.
+
 use crate::udp::message::dispatcher::MessageDispatcher;
+use crate::udp::response::{Status, UdpResponse};
 use std::io::ErrorKind::{TimedOut, WouldBlock};
 use std::net::{SocketAddr, UdpSocket};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -6,15 +13,28 @@ use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::Duration;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
+/// A UDP server that listens for incoming messages and handles them.
+///
+/// The server runs in a separate thread and can be started and stopped
+/// dynamically. It uses a message dispatcher to process incoming messages
+/// and send responses back to clients.
 struct UdpServer {
+    /// Atomic flag indicating whether the server is currently running
     running: Arc<AtomicBool>,
+    /// Handle to the server thread, protected by a mutex
     server_thread_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
+    /// Message dispatcher for processing incoming messages
     message_dispatcher: Arc<MessageDispatcher>,
 }
 
 impl UdpServer {
+    /// Creates a new UDP server instance.
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `UdpServer` instance with default settings.
     fn new() -> Self {
         Self {
             running: Arc::new(AtomicBool::new(false)),
@@ -23,6 +43,15 @@ impl UdpServer {
         }
     }
 
+    /// Starts the UDP server on the specified port.
+    ///
+    /// This method binds to the specified port, configures the socket,
+    /// and enters a loop to receive and process messages. The method
+    /// runs in a blocking fashion until the server is stopped.
+    ///
+    /// # Parameters
+    ///
+    /// * `port` - The UDP port to listen on
     fn start(&self, port: u16) {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
@@ -42,12 +71,18 @@ impl UdpServer {
             }
         };
 
-        // blocking mode to avoid busy loop
-        socket.set_nonblocking(false).expect("udp server failed to set non-blocking = false");
+        // set blocking mode to avoid server busy loop
+        match socket.set_nonblocking(false) {
+            Ok(_) => info!("udp server successfully set blocking mode to avoid busy loop"),
+            Err(e) => error!("udp server failed to set blocking mode: {:?}", e),
+        }
 
         // set read timeout to 100ms to ensure the server can stop gracefully
         let read_timeout = Some(Duration::from_millis(100));
-        socket.set_read_timeout(read_timeout).expect("udp server failed to set read timeout");
+        match socket.set_read_timeout(read_timeout) {
+            Ok(_) => info!("udp server successfully set read timeout to {:?}", read_timeout),
+            Err(e) => error!("udp server failed to set read timeout: {:?}", e),
+        }
 
         // create a buffer to store received data
         let mut buffer = [0u8; 2048];
@@ -57,33 +92,96 @@ impl UdpServer {
         info!("udp server listening on {} with blocking mode", addr);
 
         while self.running.load(Ordering::SeqCst) {
-            match socket.recv_from(&mut buffer) {
-                Ok((size, src)) => {
-                    let message = std::str::from_utf8(&buffer[..size]).unwrap();
-                    info!("udp server received message from {}: {:?}", src, message);
-
-                    let dispatch_result = self.message_dispatcher.dispatch(message);
-                    let response = dispatch_result.unwrap_or_else(|e| e.to_string());
-                    info!("udp server sending response to {}: {:?}", src, response);
-
-                    match socket.send_to(response.as_bytes(), src) {
-                        Ok(_) => info!("udp server successfully sent response to {}", src),
-                        Err(e) => error!("udp server failed to send response to {}: {:?}", src, e),
-                    }
-                }
-                Err(ref e) if e.kind() == WouldBlock || e.kind() == TimedOut => {
-                    // no data received, just continue to wait for next read
-                    continue;
-                }
-                Err(e) => {
-                    error!("udp server failed to receive data: {:?}", e);
-                }
-            }
+            self.run(&socket, &mut buffer);
         }
 
         info!("udp server gracefully stopped");
     }
 
+    /// Handles a single iteration of the server's main loop.
+    ///
+    /// This method attempts to receive data from the socket. If data is
+    /// received, it is parsed and dispatched to the appropriate handler.
+    /// If no data is received or an error occurs, the method returns
+    /// immediately.
+    ///
+    /// If no data is received, the method returns immediately.
+    /// If an error occurs, the method logs the error and returns.
+    ///
+    /// If a message is successfully received and dispatched, a response
+    /// is sent back to the client. If an error occurs during message
+    /// dispatching or response sending, an error response is sent back
+    /// to the client.
+    ///
+    /// # Parameters
+    ///
+    /// * `socket` - The UDP socket to use for receiving data
+    /// * `buffer` - A mutable buffer to store received data
+    fn run(&self, socket: &UdpSocket, buffer: &mut [u8]) {
+        let socket_recv_result = socket.recv_from(buffer);
+
+        if socket_recv_result.is_err() {
+            let e = socket_recv_result.err().unwrap();
+            if e.kind() == WouldBlock || e.kind() == TimedOut {
+                // no data received, nothing to do, just continue to wait for next read
+                return;
+            }
+            error!("udp server failed to receive data: {:?}", e);
+            return;
+        }
+
+        let (size, src) = socket_recv_result.unwrap();
+
+        if size == 0 {
+            debug!("udp server received empty message from {}", src);
+            let message = "empty message".to_string();
+            let response = UdpResponse::error(Status::BadRequest, message);
+            self.send_response(socket, src, response);
+            return;
+        }
+
+        let message_decode_result = std::str::from_utf8(&buffer[..size]);
+        if message_decode_result.is_err() {
+            let e = message_decode_result.err().unwrap();
+            let err = format!("udp server failed to parse message from {}: {:?}", src, e);
+            error!("{}", err);
+            self.send_response(socket, src, UdpResponse::error(Status::BadRequest, err));
+            return;
+        }
+
+        let message = message_decode_result.unwrap();
+        debug!("udp server received message from {}: {:?}", src, message);
+
+        let dispatch_result = self.message_dispatcher.dispatch(message);
+        let response = if let Ok(response) = dispatch_result {
+            UdpResponse::ok(response)
+        } else {
+            UdpResponse::error(Status::BadRequest, dispatch_result.err().unwrap().to_string())
+        };
+        self.send_response(socket, src, response);
+    }
+
+    /// Sends a response back to the client.
+    ///
+    /// This method serializes the `UdpResponse` into a string and sends
+    /// it back to the specified client address.
+    ///
+    /// # Parameters
+    ///
+    /// * `socket` - The UDP socket to use for sending the response
+    /// * `src` - The client address to send the response to
+    /// * `response` - The `UdpResponse` to send back to the client
+    fn send_response(&self, socket: &UdpSocket, src: SocketAddr, response: UdpResponse) {
+        match socket.send_to(response.serialize().as_bytes(), src) {
+            Ok(_) => debug!("udp server successfully sent response to {}", src),
+            Err(e) => error!("udp server failed to send response to {}: {:?}", src, e),
+        }
+    }
+
+    /// Stops the UDP server gracefully.
+    ///
+    /// This method sets the running flag to false and waits for the
+    /// server thread to exit cleanly.
     fn stop(&self) {
         info!("udp server gracefully stopping...");
         self.running.store(false, Ordering::SeqCst);
@@ -94,12 +192,30 @@ impl UdpServer {
     }
 }
 
+/// Global instance of the UDP server, initialized once.
+///
+/// This uses the `OnceLock` pattern to ensure that only one instance
+/// of the UDP server is created and used throughout the application.
 static UDP_SERVER: OnceLock<UdpServer> = OnceLock::new();
 
+/// Gets the global UDP server instance, creating it if necessary.
+///
+/// # Returns
+///
+/// Returns a reference to the global `UdpServer` instance.
 fn get_udp_server() -> &'static UdpServer {
     UDP_SERVER.get_or_init(UdpServer::new)
 }
 
+/// Starts the UDP server on the specified port in a new thread.
+///
+/// This is a public function that creates a new thread for the server
+/// and starts it on the specified port. The server will run until
+/// `stop()` is called.
+///
+/// # Parameters
+///
+/// * `port` - The UDP port to listen on
 pub(crate) fn start(port: u16) {
     let udp_server = get_udp_server();
     let server_thread_handle = thread::Builder::new()
@@ -109,6 +225,10 @@ pub(crate) fn start(port: u16) {
     *udp_server.server_thread_handle.lock().unwrap() = Some(server_thread_handle);
 }
 
+/// Stops the UDP server.
+///
+/// This is a public function that stops the running UDP server
+/// and waits for it to exit cleanly.
 pub(crate) fn stop() {
     get_udp_server().stop();
 }
@@ -118,6 +238,10 @@ mod tests {
     use crate::udp;
     use std::panic::catch_unwind;
 
+    /// Tests that starting the UDP server does not panic.
+    ///
+    /// This test verifies that the server can be started without
+    /// causing a panic, which would indicate a critical error.
     #[test]
     fn test_start_udp_server() {
         let port = 49000;
@@ -125,6 +249,10 @@ mod tests {
         assert!(result.is_ok(), "test failed: udp server start should not panic");
     }
 
+    /// Tests that stopping the UDP server does not panic.
+    ///
+    /// This test verifies that the server can be stopped without
+    /// causing a panic, which would indicate a critical error.
     #[test]
     fn test_stop_udp_server() {
         let result = catch_unwind(|| udp::server::stop());
