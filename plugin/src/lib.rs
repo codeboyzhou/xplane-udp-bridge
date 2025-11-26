@@ -1,7 +1,8 @@
+mod error;
 mod logger;
 mod udp;
 
-use std::fmt::Display;
+use crate::error::PluginError;
 use tracing::info;
 use xplm::plugin::{Plugin, PluginInfo};
 
@@ -13,19 +14,6 @@ impl XPlaneUdpBridgePlugin {
     const SIGN: &'static str = "https://github.com/codeboyzhou/xplane-udp-bridge";
     const DESC: &'static str = "A X-Plane plugin that bridges UDP communication with X-Plane";
 }
-
-#[derive(Debug)]
-struct PluginError {
-    message: String,
-}
-
-impl Display for PluginError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} plugin error: {}", XPlaneUdpBridgePlugin::NAME, self.message)
-    }
-}
-
-impl std::error::Error for PluginError {}
 
 impl Plugin for XPlaneUdpBridgePlugin {
     type Error = PluginError;

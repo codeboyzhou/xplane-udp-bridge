@@ -60,7 +60,16 @@ impl UdpServer {
             match socket.recv_from(&mut buffer) {
                 Ok((size, src)) => {
                     let message = std::str::from_utf8(&buffer[..size]).unwrap();
-                    self.message_dispatcher.dispatch(src, message, &socket);
+                    info!("udp server received message from {}: {:?}", src, message);
+
+                    let dispatch_result = self.message_dispatcher.dispatch(message);
+                    let response = dispatch_result.unwrap_or_else(|e| e.to_string());
+                    info!("udp server sending response to {}: {:?}", src, response);
+
+                    match socket.send_to(response.as_bytes(), src) {
+                        Ok(_) => info!("udp server successfully sent response to {}", src),
+                        Err(e) => error!("udp server failed to send response to {}: {:?}", src, e),
+                    }
                 }
                 Err(ref e) if e.kind() == WouldBlock || e.kind() == TimedOut => {
                     // no data received, just continue to wait for next read

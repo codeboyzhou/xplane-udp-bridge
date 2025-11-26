@@ -1,7 +1,7 @@
+use crate::error::UdpMessageError;
+use crate::udp::message::format::MessageFormat;
 use crate::udp::message::handler::{DataRefReader, MessageHandler, MessageHandlerSelector};
-use crate::udp::message::spec::MessageSpec;
 use std::collections::HashMap;
-use std::net::{SocketAddr, UdpSocket};
 use std::str::FromStr;
 use std::sync::RwLock;
 use tracing::{error, info};
@@ -24,23 +24,32 @@ impl MessageDispatcher {
         Self { lockable_message_handlers: RwLock::new(message_handlers) }
     }
 
-    pub(crate) fn dispatch(&self, src: SocketAddr, message: &str, socket: &UdpSocket) {
-        let message_spec_result = MessageSpec::from_str(message);
-        if message_spec_result.is_err() {
-            let err_msg = message_spec_result.err().unwrap();
-            error!("failed to dispatch message due to message spec parse error: {}", err_msg);
-            return;
+    pub(crate) fn dispatch(&self, message: &str) -> Result<String, UdpMessageError> {
+        info!("udp server dispatching message: {}", message);
+
+        let message_format_result = MessageFormat::from_str(message);
+        if message_format_result.is_err() {
+            let err = message_format_result.err().unwrap();
+            error!("failed to dispatch message due to message format parse error: {:?}", err);
+            return Err(UdpMessageError::FormatError { source: err });
         }
 
-        let message_spec = message_spec_result.unwrap();
-        let message_handler_selector = message_spec.get_message_handler_selector();
+        let message_format = message_format_result.unwrap();
+        let message_handler_selector = message_format.parse_message_handler_selector();
         let message_handlers = self.lockable_message_handlers.read().unwrap();
 
         if let Some(message_handler) = message_handlers.get(&message_handler_selector) {
-            info!("dispatching message to handler selector: {}", message_handler_selector);
-            message_handler.handle(src, &message_spec.payload, socket);
+            info!("udp server handling message: {}", message);
+            match message_handler.handle(&message_format.data) {
+                Ok(response) => Ok(response),
+                Err(e) => {
+                    error!("udp server handle message error: {:?}", e);
+                    Err(UdpMessageError::HandlerError { source: e })
+                }
+            }
         } else {
-            error!("no message handler impl found for selector: {}", message_handler_selector);
+            error!("no message handler impl found for message: {}", message);
+            Err(UdpMessageError::HandlerNotFound { message: message.to_string() })
         }
     }
 }

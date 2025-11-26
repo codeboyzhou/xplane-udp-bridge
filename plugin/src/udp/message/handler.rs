@@ -1,12 +1,12 @@
+use crate::error::MessageHandlerError;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::net::{SocketAddr, UdpSocket};
 use tracing::{error, info};
 use xplm::data::borrowed::DataRef;
 use xplm::data::{DataRead, DataType, ReadOnly};
 
 pub(crate) trait MessageHandler: Send + Sync + 'static {
-    fn handle(&self, src: SocketAddr, payload: &str, socket: &UdpSocket);
+    fn handle(&self, data: &str) -> Result<String, MessageHandlerError>;
 }
 
 pub(crate) struct DataRefReader<T> {
@@ -28,23 +28,18 @@ where
     T: DataType + Debug + Send + Sync + 'static,
     DataRef<T, ReadOnly>: DataRead<T>,
 {
-    fn handle(&self, src: SocketAddr, payload: &str, socket: &UdpSocket) {
-        let type_name = std::any::type_name::<T>();
-        info!("DataRefReader<{}> received message from {}: {}", type_name, src, payload);
-        match DataRef::<T, ReadOnly>::find(payload) {
+    fn handle(&self, data: &str) -> Result<String, MessageHandlerError> {
+        let handler_type = format!("DataRefReader<{}>", std::any::type_name::<T>());
+        info!("{} finding dataref: {}", handler_type, data);
+        match DataRef::<T, ReadOnly>::find(data) {
             Ok(dataref) => {
-                let response = format!("{:?}", dataref.get());
-                info!("DataRefReader<{}> read value {:?}", type_name, response);
-                if let Err(e) = socket.send_to(response.as_bytes(), src) {
-                    error!("DataRefReader<{}> failed to send response: {:?}", type_name, e);
-                }
+                let value = format!("{:?}", dataref.get());
+                info!("{} found dataref [{}] and read the value: {}", handler_type, data, value);
+                Ok(value)
             }
             Err(e) => {
-                let msg = format!("read error for {}: {:?}", payload, e);
-                error!("DataRefReader<{}> {}", type_name, msg);
-                if let Err(e) = socket.send_to(msg.as_bytes(), src) {
-                    error!("DataRefReader<{}> failed to send error response: {:?}", type_name, e);
-                }
+                error!("{} failed to find dataref [{}]: {:?}", handler_type, data, e);
+                Err(MessageHandlerError::DataRefFindError { dataref: data.to_string(), source: e })
             }
         }
     }
