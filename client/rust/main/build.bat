@@ -13,9 +13,9 @@ cargo fmt
 echo Finished: cargo fmt
 
 echo Running: cargo clippy
-cargo clippy --no-deps
+cargo clippy --no-deps -- -D warnings
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Cargo clippy failed.
+    echo ERROR: Cargo clippy failed due to warnings or errors.
     exit /b %ERRORLEVEL%
 )
 echo Finished: cargo clippy
