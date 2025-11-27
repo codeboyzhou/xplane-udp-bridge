@@ -21,7 +21,7 @@ struct LocalTime;
 impl FormatTime for LocalTime {
     /// Formats the current local time according to the specified format.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `writer` - A mutable writer to write the formatted time to
     ///

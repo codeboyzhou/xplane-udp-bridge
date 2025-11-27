@@ -51,7 +51,7 @@ impl UdpServer {
     /// and enters a loop to receive and process requests. The method
     /// runs in a blocking fashion until the server is stopped.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `port` - The UDP port to listen on
     fn start(&self, port: u16) {
@@ -112,7 +112,7 @@ impl UdpServer {
     /// dispatching or response sending, an error response is sent back
     /// to the client.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `socket` - The UDP socket to use for receiving data
     /// * `buffer` - A mutable buffer to store received data
@@ -175,7 +175,7 @@ impl UdpServer {
     /// This method serializes the `UdpResponse` into a string and sends
     /// it back to the specified client address.
     ///
-    /// # Parameters
+    /// # Arguments
     ///
     /// * `socket` - The UDP socket to use for sending the response
     /// * `src` - The client address to send the response to
@@ -222,7 +222,7 @@ fn get_udp_server() -> &'static UdpServer {
 /// and starts it on the specified port. The server will run until
 /// `stop()` is called.
 ///
-/// # Parameters
+/// # Arguments
 ///
 /// * `port` - The UDP port to listen on
 pub(crate) fn start(port: u16) {

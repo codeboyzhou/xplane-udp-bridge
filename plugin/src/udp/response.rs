@@ -31,7 +31,7 @@ pub(crate) struct UdpResponse {
 impl UdpResponse {
     /// Creates a successful response with the specified message.
     ///
-    /// # Parameters
+    /// # Arguments
     /// * `message` - A string containing the success message to be sent to the client
     ///
     /// # Returns
@@ -47,7 +47,7 @@ impl UdpResponse {
 
     /// Creates an error response with the specified status and message.
     ///
-    /// # Parameters
+    /// # Arguments
     /// * `status` - The error status to include in the response
     /// * `message` - A string containing the error message to be sent to the client
     ///
