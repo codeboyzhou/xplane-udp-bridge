@@ -4,7 +4,7 @@
 //! UDP response messages that are sent back to clients. It follows a simple HTTP-like
 //! response format with status codes and messages.
 
-use crate::udp::message::format::MessageFormat;
+use crate::udp::request::UdpRequest;
 
 /// Represents the status of a UDP response.
 ///
@@ -91,6 +91,6 @@ impl UdpResponse {
             Status::BadRequest => "Bad Request",
         };
         let message_parts = [code.to_string(), phrase.to_string(), message.clone()];
-        message_parts.join(MessageFormat::MESSAGE_PARTS_SEPARATOR)
+        message_parts.join(UdpRequest::MESSAGE_PARTS_SEPARATOR)
     }
 }

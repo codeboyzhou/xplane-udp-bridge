@@ -4,10 +4,12 @@
 //! It handles incoming UDP messages, dispatches them to appropriate handlers,
 //! and sends responses back to clients.
 
-use crate::udp::message::dispatcher::MessageDispatcher;
+use crate::udp::dispatcher::RequestDispatcher;
+use crate::udp::request::UdpRequest;
 use crate::udp::response::{Status, UdpResponse};
 use std::io::ErrorKind::{TimedOut, WouldBlock};
 use std::net::{SocketAddr, UdpSocket};
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::thread;
@@ -25,8 +27,8 @@ struct UdpServer {
     running: Arc<AtomicBool>,
     /// Handle to the server thread, protected by a mutex
     server_thread_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
-    /// Message dispatcher for processing incoming messages
-    message_dispatcher: Arc<MessageDispatcher>,
+    /// Request dispatcher for processing incoming requests
+    request_dispatcher: Arc<RequestDispatcher>,
 }
 
 impl UdpServer {
@@ -39,7 +41,7 @@ impl UdpServer {
         Self {
             running: Arc::new(AtomicBool::new(false)),
             server_thread_handle: Arc::new(Mutex::new(None)),
-            message_dispatcher: Arc::new(MessageDispatcher::new()),
+            request_dispatcher: Arc::new(RequestDispatcher::new()),
         }
     }
 
@@ -145,18 +147,27 @@ impl UdpServer {
             let e = message_decode_result.err().unwrap();
             let err = format!("udp server failed to parse message from {}: {:?}", src, e);
             error!("{}", err);
-            self.send_response(socket, src, UdpResponse::error(Status::BadRequest, err));
+            let response = UdpResponse::error(Status::BadRequest, err);
+            self.send_response(socket, src, response);
             return;
         }
 
         let message = message_decode_result.unwrap();
         debug!("udp server received message from {}: {:?}", src, message);
 
-        let dispatch_result = self.message_dispatcher.dispatch(message);
-        let response = if let Ok(response) = dispatch_result {
-            UdpResponse::ok(response)
-        } else {
-            UdpResponse::error(Status::BadRequest, dispatch_result.err().unwrap().to_string())
+        let udp_request_build_result = UdpRequest::from_str(message);
+        if udp_request_build_result.is_err() {
+            let err = udp_request_build_result.err().unwrap();
+            error!("udp server failed to build request from message due to error: {:?}", err);
+            let response = UdpResponse::error(Status::BadRequest, err.to_string());
+            self.send_response(socket, src, response);
+            return;
+        }
+
+        let request = udp_request_build_result.unwrap();
+        let response = match self.request_dispatcher.dispatch(request) {
+            Ok(response) => UdpResponse::ok(response),
+            Err(e) => UdpResponse::error(Status::BadRequest, e.to_string()),
         };
         self.send_response(socket, src, response);
     }

@@ -1,3 +1,4 @@
+use crate::udp::request::UdpRequest;
 use thiserror::Error;
 use xplm::data::borrowed::FindError;
 
@@ -5,31 +6,16 @@ use xplm::data::borrowed::FindError;
 pub(crate) enum PluginError {}
 
 #[derive(Error, Debug)]
-pub(crate) enum UdpMessageError {
-    #[error("udp server handle message error: {source}")]
-    FormatError {
-        #[source]
-        source: MessageFormatError,
-    },
-
-    #[error("no message handler impl found for message: {message}")]
-    HandlerNotFound { message: String },
-
-    #[error("udp server handle message error: {source}")]
-    HandlerError {
-        #[source]
-        source: MessageHandlerError,
-    },
-}
-
-#[derive(Error, Debug)]
-pub(crate) enum MessageFormatError {
+pub(crate) enum BadRequestError {
     #[error("invalid message format: {message}")]
     InvalidMessageFormat { message: String },
 }
 
 #[derive(Error, Debug)]
-pub(crate) enum MessageHandlerError {
+pub(crate) enum RequestHandlerError {
+    #[error("unsupported request format: {request:?}")]
+    UnsupportedRequestFormat { request: UdpRequest },
+
     #[error("failed to find dataref [{dataref}]: {source}")]
     DataRefFindError {
         dataref: String,
