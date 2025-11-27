@@ -1,7 +1,7 @@
 //! # UDP Server Module
 //!
 //! This module provides UDP server functionality for the X-Plane UDP Bridge plugin.
-//! It handles incoming UDP messages, dispatches them to appropriate handlers,
+//! It handles incoming UDP requests, dispatches them to appropriate handlers,
 //! and sends responses back to clients.
 
 use crate::udp::dispatcher::RequestDispatcher;
@@ -17,10 +17,10 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 use tracing::{debug, error, info};
 
-/// A UDP server that listens for incoming messages and handles them.
+/// A UDP server that listens for incoming requests and handles them.
 ///
 /// The server runs in a separate thread and can be started and stopped
-/// dynamically. It uses a message dispatcher to process incoming messages
+/// dynamically. It uses a request dispatcher to process incoming requests
 /// and send responses back to clients.
 struct UdpServer {
     /// Atomic flag indicating whether the server is currently running
@@ -48,7 +48,7 @@ impl UdpServer {
     /// Starts the UDP server on the specified port.
     ///
     /// This method binds to the specified port, configures the socket,
-    /// and enters a loop to receive and process messages. The method
+    /// and enters a loop to receive and process requests. The method
     /// runs in a blocking fashion until the server is stopped.
     ///
     /// # Parameters
@@ -107,11 +107,8 @@ impl UdpServer {
     /// If no data is received or an error occurs, the method returns
     /// immediately.
     ///
-    /// If no data is received, the method returns immediately.
-    /// If an error occurs, the method logs the error and returns.
-    ///
-    /// If a message is successfully received and dispatched, a response
-    /// is sent back to the client. If an error occurs during message
+    /// If a request is successfully received and dispatched, a response
+    /// is sent back to the client. If an error occurs during request
     /// dispatching or response sending, an error response is sent back
     /// to the client.
     ///
@@ -128,6 +125,7 @@ impl UdpServer {
                 // no data received, nothing to do, just continue to wait for next read
                 return;
             }
+            // other errors, log and continue to wait for next read
             error!("udp server failed to receive data: {:?}", e);
             return;
         }
@@ -157,9 +155,9 @@ impl UdpServer {
 
         let udp_request_build_result = UdpRequest::from_str(message);
         if udp_request_build_result.is_err() {
-            let err = udp_request_build_result.err().unwrap();
-            error!("udp server failed to build request from message due to error: {:?}", err);
-            let response = UdpResponse::error(Status::BadRequest, err.to_string());
+            let e = udp_request_build_result.err().unwrap();
+            error!("udp server failed to build request from message due to error: {:?}", e);
+            let response = UdpResponse::error(Status::BadRequest, e.to_string());
             self.send_response(socket, src, response);
             return;
         }

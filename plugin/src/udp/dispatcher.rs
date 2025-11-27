@@ -37,7 +37,7 @@ impl RequestDispatcher {
             }
             None => {
                 error!("no request handler impl found for request: {:?}", request);
-                Err(RequestHandlerError::UnsupportedRequestFormat { request })
+                Err(RequestHandlerError::HandlerImplNotFound { request })
             }
         }
     }

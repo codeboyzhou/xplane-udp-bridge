@@ -13,8 +13,8 @@ pub(crate) enum BadRequestError {
 
 #[derive(Error, Debug)]
 pub(crate) enum RequestHandlerError {
-    #[error("unsupported request format: {request:?}")]
-    UnsupportedRequestFormat { request: UdpRequest },
+    #[error("no request handler impl found for request: {:?}", request)]
+    HandlerImplNotFound { request: UdpRequest },
 
     #[error("failed to find dataref [{dataref}]: {source}")]
     DataRefFindError {

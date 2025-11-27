@@ -8,7 +8,7 @@ enum RequestType {
 }
 
 #[derive(Debug)]
-enum UdpMethod {
+enum RequestMethod {
     Read,
 }
 
@@ -21,7 +21,7 @@ enum DataType {
 #[derive(Debug)]
 pub(crate) struct UdpRequest {
     request_type: RequestType,
-    method: UdpMethod,
+    method: RequestMethod,
     data_type: DataType,
     body: String,
 }
@@ -40,7 +40,7 @@ impl UdpRequest {
             RequestType::DataRef => "dataref",
         };
         let method = match self.method {
-            UdpMethod::Read => "read",
+            RequestMethod::Read => "read",
         };
         let data_type = match self.data_type {
             DataType::Int => "int",
@@ -70,7 +70,7 @@ impl FromStr for UdpRequest {
                 _ => return Err(err),
             },
             method: match parts[1] {
-                "read" => UdpMethod::Read,
+                "read" => RequestMethod::Read,
                 _ => return Err(err),
             },
             data_type: match parts[2] {
