@@ -9,6 +9,7 @@ mod logger;
 mod udp;
 
 use crate::error::PluginError;
+use crate::udp::server::UdpServer;
 use tracing::info;
 use xplm::plugin::{Plugin, PluginInfo};
 
@@ -55,7 +56,7 @@ impl Plugin for XPlaneUdpBridgePlugin {
     fn start() -> Result<Self, Self::Error> {
         logger::init_file_logger();
         info!("{} plugin starting...", Self::NAME);
-        udp::server::start(Self::UDP_SERVER_PORT);
+        UdpServer::start(Self::UDP_SERVER_PORT);
         info!("{} plugin started successfully", Self::NAME);
         Ok(Self {})
     }
@@ -75,18 +76,6 @@ impl Plugin for XPlaneUdpBridgePlugin {
             signature: String::from(Self::SIGN),
             description: String::from(Self::DESC),
         }
-    }
-}
-
-impl Drop for XPlaneUdpBridgePlugin {
-    /// Cleans up resources when the plugin is unloaded.
-    ///
-    /// This method is called when X-Plane unloads the plugin.
-    /// It stops the UDP server and performs any necessary cleanup.
-    fn drop(&mut self) {
-        info!("{} plugin dropping...", Self::NAME);
-        udp::server::stop();
-        info!("{} plugin dropped successfully", Self::NAME);
     }
 }
 

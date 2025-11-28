@@ -15,6 +15,8 @@ pub(crate) enum Status {
     Ok,
     /// Indicates the request was malformed or invalid (HTTP 400 equivalent)
     BadRequest,
+    /// Indicates the server encountered an internal error (HTTP 500 equivalent)
+    InternalServerError,
 }
 
 /// Represents a complete UDP response that can be sent to clients.
@@ -85,10 +87,12 @@ impl UdpResponse {
         let code = match status {
             Status::Ok => 200,
             Status::BadRequest => 400,
+            Status::InternalServerError => 500,
         };
         let phrase = match status {
             Status::Ok => "OK",
             Status::BadRequest => "Bad Request",
+            Status::InternalServerError => "Internal Server Error",
         };
         let message_parts = [code.to_string(), phrase.to_string(), message.clone()];
         message_parts.join(UdpRequest::MESSAGE_PARTS_SEPARATOR)
