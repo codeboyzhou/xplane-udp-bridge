@@ -3,6 +3,10 @@
 //! This module provides UDP server functionality for the X-Plane UDP Bridge plugin.
 //! It handles incoming UDP requests, dispatches them to appropriate handlers,
 //! and sends responses back to clients.
+//!
+//! The server runs in a separate thread with its own Tokio runtime to avoid
+//! blocking the X-Plane main thread. It uses an async approach with Tokio
+//! for efficient network operations.
 
 use crate::udp::dispatcher::RequestDispatcher;
 use crate::udp::request::UdpRequest;
@@ -14,21 +18,49 @@ use tracing::{error, info};
 
 /// A UDP server that listens for incoming requests and handles them.
 ///
-/// The server runs in a separate thread and can be started and stopped
-/// dynamically. It uses a request dispatcher to process incoming requests
-/// and send responses back to clients.
+/// The server runs in a separate thread with its own Tokio runtime to avoid
+/// blocking the X-Plane main thread. It creates a multi-threaded runtime
+/// with worker threads based on the available parallelism of the system.
+///
+/// The server uses a request dispatcher to process incoming requests and
+/// send responses back to clients. It handles various error conditions
+/// including message parsing errors, request handling errors, and network errors.
 pub(crate) struct UdpServer;
 
 impl UdpServer {
     /// Starts the UDP server on the specified port.
     ///
-    /// This method binds to the specified port, configures the socket,
-    /// and enters a loop to receive and process requests. The method
-    /// runs in a blocking fashion until the server is stopped.
+    /// This method creates a new thread with its own Tokio runtime to avoid
+    /// blocking the X-Plane main thread. The runtime is configured with
+    /// multiple worker threads based on the system's available parallelism.
+    ///
+    /// The server binds to the specified address and enters an infinite loop
+    /// to receive and process requests. Each request is parsed, dispatched to
+    /// the appropriate handler, and a response is sent back to the client.
     ///
     /// # Arguments
     ///
     /// * `port` - The UDP port to listen on
+    ///
+    /// # Thread Safety
+    ///
+    /// This method spawns a new thread and returns immediately, allowing the
+    /// X-Plane main thread to continue its normal operation.
+    ///
+    /// # Error Handling
+    ///
+    /// The server handles various error conditions:
+    /// - Socket binding errors
+    /// - Message parsing errors
+    /// - Request handling errors
+    /// - Network transmission errors
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// // Start the UDP server on port 49000
+    /// UdpServer::start(49000);
+    /// ```
     pub(crate) fn start(port: u16) {
         let addr = SocketAddr::from(([0, 0, 0, 0], port));
         let dispatcher = RequestDispatcher::new();
@@ -108,13 +140,25 @@ impl UdpServer {
     /// Sends a response back to the client.
     ///
     /// This method serializes the `UdpResponse` into a string and sends
-    /// it back to the specified client address.
+    /// it back to the specified client address using the provided socket.
     ///
     /// # Arguments
     ///
     /// * `socket` - The UDP socket to use for sending the response
     /// * `src` - The client address to send the response to
     /// * `response` - The `UdpResponse` to send back to the client
+    ///
+    /// # Error Handling
+    ///
+    /// If sending the response fails, an error message is logged but the
+    /// server continues to operate.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let response = UdpResponse::ok("Success".to_string());
+    /// UdpServer::send_response(&socket, client_addr, response).await;
+    /// ```
     async fn send_response(socket: &UdpSocket, src: SocketAddr, response: UdpResponse) {
         if let Err(e) = socket.send_to(response.serialize().as_bytes(), src).await {
             error!("udp server failed to send response to {}: {:?}", src, e);
@@ -131,6 +175,12 @@ mod tests {
     ///
     /// This test verifies that the server can be started without
     /// causing a panic, which would indicate a critical error.
+    ///
+    /// # Note
+    ///
+    /// This test only checks that the `start` method doesn't panic.
+    /// It doesn't verify the actual server functionality as that would
+    /// require more complex integration testing.
     #[test]
     fn test_start_udp_server() {
         let port = 49000;
