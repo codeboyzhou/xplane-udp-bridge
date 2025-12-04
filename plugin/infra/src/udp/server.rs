@@ -97,12 +97,18 @@ impl UdpServer {
     }
 
     fn handle_request(&self, request: UdpRequest) -> Result<String, Box<dyn std::error::Error>> {
-        for handler in self.request_handlers.lock().unwrap().iter() {
-            if handler.get_handler_type() == request.determine_handler_type() {
-                return handler.handle(request);
+        let request_handler_type = request.determine_handler_type();
+        match self.request_handlers.try_lock() {
+            Ok(handlers) => {
+                for handler in handlers.iter() {
+                    if handler.get_handler_type() == request_handler_type {
+                        return handler.handle(request);
+                    }
+                }
+                Err(UdpRequestHandlerError::NoHandlerFound { request }.into())
             }
+            Err(_) => Err(UdpRequestHandlerError::TryLockError.into()),
         }
-        Err(UdpRequestHandlerError::NoHandlerFound { request }.into())
     }
 
     async fn send_response(socket: &tokio::net::UdpSocket, response: UdpResponse, src: SocketAddr) {
