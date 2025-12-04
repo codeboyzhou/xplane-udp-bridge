@@ -4,6 +4,9 @@
 # rust build files
 target/
 
+# python build files
+__pycache__/
+
 # local environment variables
 .env
 
