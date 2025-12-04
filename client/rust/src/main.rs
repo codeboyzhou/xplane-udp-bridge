@@ -1,5 +1,6 @@
 mod dataref;
 
+use crate::dataref::DataRefReader;
 use std::io;
 use std::io::ErrorKind;
 use std::net::UdpSocket;
@@ -20,11 +21,11 @@ impl UdpClient {
     /// Args:
     ///     host: server IP (e.g., "127.0.0.1")
     ///     port: server port (e.g., 49000)
-    ///     timeout_secs: socket timeout seconds (e.g., 3.0)
+    ///     timeout_secs: socket timeout seconds (e.g., 30)
     ///
     /// Returns:
     ///     UdpClient instance or error on failure
-    fn new(host: &str, port: u16, timeout_secs: f64) -> io::Result<Self> {
+    fn new(host: &str, port: u16, timeout_secs: u64) -> io::Result<Self> {
         println!(
             "🔌 Creating UDP client to server {}:{} with timeout {} seconds",
             host, port, timeout_secs
@@ -36,9 +37,9 @@ impl UdpClient {
         let socket = UdpSocket::bind("0.0.0.0:0")?;
 
         // Set socket read timeout
-        socket.set_read_timeout(Some(Duration::from_secs_f64(timeout_secs)))?;
+        socket.set_read_timeout(Some(Duration::from_secs(timeout_secs)))?;
 
-        println!("✅ UDP client created successfully and bound to {}", socket.local_addr()?);
+        println!("✅  UDP client successfully created and bound to {}", socket.local_addr()?);
 
         Ok(Self { server_addr, socket })
     }
@@ -54,7 +55,7 @@ impl UdpClient {
     fn send_and_recv(&self, data: &[u8]) -> Option<Vec<u8>> {
         // Send data
         match self.socket.send_to(data, &self.server_addr) {
-            Ok(_) => println!("✅ UDP data sent successfully, waiting for response..."),
+            Ok(_) => println!("✅  UDP data sent successfully, waiting for response..."),
             Err(e) => eprintln!("❌ UDP error while sending: {}", e),
         }
 
@@ -78,19 +79,22 @@ impl UdpClient {
 
 fn main() {
     // Create UDP client
-    let client = UdpClient::new("127.0.0.1", 49000, 3.0).expect("Failed to create UDP client");
+    let client = UdpClient::new("127.0.0.1", 49000, 30).expect("Failed to create UDP client");
 
     // Create dataref reader
-    let dataref_reader = dataref::Reader::new(&client);
+    let dataref_reader = DataRefReader::new(&client);
 
     loop {
         // Read dataref value examples
-        match dataref_reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio") {
-            Ok(value) => println!("⬅️ received dataref value: {}", value),
-            Err(err_msg) => eprintln!("Error reading dataref: {}", err_msg),
+        let data_refs = ["sim/cockpit2/controls/parking_brake_ratio"];
+        for data_ref in data_refs {
+            match dataref_reader.read_as_float(data_ref) {
+                Ok(value) => println!("✅  Read dataref successfully: {} = {}", data_ref, value),
+                Err(err_msg) => eprintln!("❌ Error reading dataref: {}", err_msg),
+            }
         }
 
         // Sleep for a short duration to avoid overloading the server
-        std::thread::sleep(Duration::from_millis(1000));
+        std::thread::sleep(Duration::from_secs(3));
     }
 }
