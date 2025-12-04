@@ -1,0 +1,10 @@
+[package]
+name = "mock"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mock"
+
+[dependencies]
+infra = { workspace = true }

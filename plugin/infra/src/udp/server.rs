@@ -105,7 +105,7 @@ impl UdpServer {
                         return handler.handle(request);
                     }
                 }
-                Err(UdpRequestHandlerError::NoHandlerFound { request }.into())
+                Err(UdpRequestHandlerError::NoHandlerImplFound { request }.into())
             }
             Err(_) => Err(UdpRequestHandlerError::TryLockError.into()),
         }

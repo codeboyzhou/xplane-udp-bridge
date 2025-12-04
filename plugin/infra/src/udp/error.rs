@@ -18,7 +18,7 @@ pub(crate) enum InvalidUdpRequestError {
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum UdpRequestHandlerError {
     #[error("No UDP request handler impl found for request: {:?}", request)]
-    NoHandlerFound { request: UdpRequest },
+    NoHandlerImplFound { request: UdpRequest },
 
     #[error("UDP server failed to try lock request handlers")]
     TryLockError,
