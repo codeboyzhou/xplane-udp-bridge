@@ -56,6 +56,14 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo Finished: cargo clippy
 
+echo Running: cargo test
+cargo test
+if %ERRORLEVEL% NEQ 0 (
+    echo ERROR: Cargo test failed.
+    exit /b %ERRORLEVEL%
+)
+echo Finished: cargo test
+
 echo Building release...
 cargo build --release
 if %ERRORLEVEL% NEQ 0 (
@@ -63,7 +71,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-set SRC=target\release\xplane_udp_bridge_plugin.dll
+set SRC=target\release\dylib.dll
 set DEST=%XPLANE_PLUGIN_DIR%\XPlaneUdpBridge\64
 
 if not exist "%SRC%" (

@@ -1,0 +1,12 @@
+[package]
+name = "dylib"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+xplm = { workspace = true }
+infra = { workspace = true }
+thiserror = { workspace = true }
