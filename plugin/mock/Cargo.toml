@@ -8,3 +8,5 @@ name = "mock"
 
 [dependencies]
 infra = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }

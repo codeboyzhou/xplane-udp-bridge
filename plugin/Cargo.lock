@@ -250,6 +250,8 @@ name = "mock"
 version = "1.0.0"
 dependencies = [
  "infra",
+ "thiserror 2.0.17",
+ "tracing",
 ]
 
 [[package]]
