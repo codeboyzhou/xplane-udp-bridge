@@ -72,7 +72,7 @@ impl<'a> DataRefReader<'a> {
                     .nth(2)
                     .unwrap_or("0.0")
                     .parse::<f32>()
-                    .map_err(|e| format!("❌ Failed to parse dataref value: {:?}", e))?;
+                    .map_err(|e| format!("❌ Error parsing float value: {:?}", e))?;
                 println!("⬅️ Parsed dataref value: {}", value);
                 Ok(value)
             }

@@ -36,7 +36,7 @@ impl UdpClient {
     /// let client = UdpClient::new("127.0.0.1", 49000, 30)?;
     /// ```
     pub(crate) fn new(host: &str, port: u16, timeout_secs: u64) -> io::Result<Self> {
-        println!("🔌 Connecting to {}:{} with timeout {} seconds", host, port, timeout_secs);
+        println!("🔗 Connecting to {}:{} with timeout {} seconds", host, port, timeout_secs);
 
         let server_addr = format!("{}:{}", host, port);
 

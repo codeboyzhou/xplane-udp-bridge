@@ -42,7 +42,7 @@ class UdpClient:
             >>> print(client.server_addr)
             ('127.0.0.1', 49000)
         """
-        print(f"🔌 Connecting to {host}:{port} with timeout {timeout_secs} seconds")
+        print(f"🔗 Connecting to {host}:{port} with timeout {timeout_secs} seconds")
         self.server_addr = (host, port)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(timeout_secs)
@@ -71,11 +71,16 @@ class UdpClient:
         """
         try:
             self.socket.sendto(data, self.server_addr)
+        except Exception as e:
+            print(f"❌ UDP error while sending data: {e}")
+            return None
+        
+        try:
             response, _ = self.socket.recvfrom(2048)
             return response
         except TimeoutError:
             print(f"⏰ UDP request timed out after {self.socket.gettimeout()} seconds")
             return None
         except Exception as e:
-            print(f"❌ UDP error while sending/receiving data: {e}")
+            print(f"❌ UDP error while receiving data: {e}")
             return None
