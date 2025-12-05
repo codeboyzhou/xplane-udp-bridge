@@ -27,7 +27,7 @@ class UdpClient:
         socket (socket.socket): UDP socket for communication with the server.
     """
 
-    def __init__(self, host: str, port: int, timeout_secs: float = 30):
+    def __init__(self, host: str, port: int, timeout_secs: float = 3):
         """
         Initialize UDP Client for XPlane UDP bridge plugin.
 
@@ -36,7 +36,7 @@ class UdpClient:
         Args:
             host (str): Server IP address (e.g., "127.0.0.1" for localhost).
             port (int): Server port number (e.g., 49000 for XPlane UDP bridge).
-            timeout_secs (float, optional): Socket timeout in seconds. Defaults to 30.
+            timeout_secs (float, optional): Socket timeout in seconds. Defaults to 3.
 
         Example:
             >>> client = UdpClient("127.0.0.1", 49000, 10)

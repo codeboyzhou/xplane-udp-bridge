@@ -6,7 +6,7 @@ import (
 
 func main() {
 	// Create UDP client
-	client := NewUdpClient("127.0.0.1", 49000, 30)
+	client := NewUdpClient("127.0.0.1", 49000, 3)
 
 	// Create DataRefReader
 	reader := NewDataRefReader(client)

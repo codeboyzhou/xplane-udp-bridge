@@ -8,7 +8,7 @@ use std::time::Duration;
 
 fn main() {
     // Create UDP client
-    let client = UdpClient::new("127.0.0.1", 49000, 30).expect("Failed to create UDP client");
+    let client = UdpClient::new("127.0.0.1", 49000, 3).expect("Failed to create UDP client");
 
     // Create DataRefReader
     let dataref_reader = DataRefReader::new(&client);
