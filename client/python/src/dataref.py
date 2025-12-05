@@ -5,15 +5,16 @@ This module provides functionality to read data references (datarefs) from XPlan
 Datarefs are variables in XPlane that can be read or written to control or monitor various aspects of the simulation.
 
 Example:
-    >>> from src.udp import UdpClient
-    >>> from src.dataref import DataRefReader
+    >>> from udp import UdpClient
+    >>> from dataref import DataRefReader
     >>> client = UdpClient("127.0.0.1", 49000)
     >>> reader = DataRefReader(client)
     >>> parking_brake = reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio")
     >>> print(f"Parking brake ratio: {parking_brake}")
 """
 
-from src.udp import UdpClient
+from udp import UdpClient
+from termcolor import colored
 
 
 class DataRefReader:
@@ -35,7 +36,7 @@ class DataRefReader:
             client (UdpClient): UDP client instance for communication with the XPlane plugin.
 
         Example:
-            >>> from src.udp import UdpClient
+            >>> from udp import UdpClient
             >>> client = UdpClient("127.0.0.1", 49000)
             >>> reader = DataRefReader(client)
         """
@@ -65,14 +66,15 @@ class DataRefReader:
             ...     print("Failed to read altitude")
         """
         data = f"dataref|read|float|{data_ref}"
-        print(f"➡️ Sending dataref read request: {data}")
+        print("=" * 100)
+        print(colored(f"Sending dataref read request: {data}", "cyan"))
         response = self.client.send_and_recv(data.encode())
         if response:
             response_body = response.decode().strip()
-            print(f"⬅️ Received dataref read response body: {response_body}")
+            print(colored(f"Received dataref read response body: {response_body}", "yellow"))
             value = float(response_body.split("|")[-1])
-            print(f"✅ Dataref {data_ref} successfully read as float: {value}")
+            print(colored(f"Dataref {data_ref} successfully read as float: {value}", "green"))
             return value
         else:
-            print(f"❌ Dataref {data_ref} read failed: no response from server")
+            print(colored(f"Dataref {data_ref} read failed: no response from server", "red"))
             return None

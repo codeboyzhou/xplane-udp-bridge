@@ -12,6 +12,7 @@ Example:
 """
 
 import socket
+from termcolor import colored
 
 
 class UdpClient:
@@ -42,11 +43,12 @@ class UdpClient:
             >>> print(client.server_addr)
             ('127.0.0.1', 49000)
         """
-        print(f"🔗 Connecting to {host}:{port} with timeout {timeout_secs} seconds")
+        print("=" * 100)
+        print(colored(f"Creating UDP client to server {host}:{port} with timeout {timeout_secs} seconds", "cyan"))
         self.server_addr = (host, port)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(timeout_secs)
-        print("✅ Connected successfully via UDP protocol")
+        print(colored("Created UDP client successfully", "green"))
 
     def send_and_recv(self, data: bytes) -> bytes | None:
         """
@@ -72,15 +74,15 @@ class UdpClient:
         try:
             self.socket.sendto(data, self.server_addr)
         except Exception as e:
-            print(f"❌ UDP error while sending data: {e}")
+            print(colored(f"UDP error while sending data: {e}", "red"))
             return None
-        
+
         try:
             response, _ = self.socket.recvfrom(2048)
             return response
         except TimeoutError:
-            print(f"⏰ UDP request timed out after {self.socket.gettimeout()} seconds")
+            print(colored(f"UDP request timed out after {self.socket.gettimeout()} seconds", "red"))
             return None
         except Exception as e:
-            print(f"❌ UDP error while receiving data: {e}")
+            print(colored(f"UDP error while receiving data: {e}", "red"))
             return None

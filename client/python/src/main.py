@@ -1,7 +1,7 @@
 import time
 
-from src.dataref import DataRefReader
-from src.udp import UdpClient
+from dataref import DataRefReader
+from udp import UdpClient
 
 if __name__ == "__main__":
     # Create UDP client
