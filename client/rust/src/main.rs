@@ -25,7 +25,9 @@ fn main() {
                         data_ref, value
                     ))
                 ),
-                Err(msg) => eprintln!("{}", Red.paint(format!("Error reading dataref: {}", msg))),
+                Err(msg) => {
+                    eprintln!("{}", Red.paint(format!("Dataref {} read failed: {}", data_ref, msg)))
+                }
             }
         }
 

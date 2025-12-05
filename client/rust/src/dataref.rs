@@ -75,11 +75,7 @@ impl<'a> DataRefReader<'a> {
                 let value = data.split("|").nth(2).unwrap().parse::<f32>().unwrap();
                 Ok(value)
             }
-            None => {
-                let msg = Red.paint("No response from server");
-                eprintln!("{}", msg);
-                Err(msg.to_string())
-            }
+            None => Err(Red.paint("no response from server").to_string()),
         }
     }
 }
