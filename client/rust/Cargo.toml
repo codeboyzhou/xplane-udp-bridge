@@ -4,3 +4,4 @@ version = "1.0.0"
 edition = "2024"
 
 [dependencies]
+nu-ansi-term = "0.50.3"

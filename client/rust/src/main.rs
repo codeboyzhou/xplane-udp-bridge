@@ -3,6 +3,7 @@ mod udp;
 
 use crate::dataref::DataRefReader;
 use crate::udp::UdpClient;
+use nu_ansi_term::Color::{Green, Red};
 use std::time::Duration;
 
 fn main() {
@@ -17,8 +18,14 @@ fn main() {
         let data_refs = ["sim/cockpit2/controls/parking_brake_ratio"];
         for data_ref in data_refs {
             match dataref_reader.read_as_float(data_ref) {
-                Ok(value) => println!("✅  Dataref {data_ref} successfully read as float: {value}"),
-                Err(err_msg) => eprintln!("❌ Error reading dataref: {}", err_msg),
+                Ok(value) => println!(
+                    "{}",
+                    Green.paint(format!(
+                        "Dataref {} successfully read as float: {}",
+                        data_ref, value
+                    ))
+                ),
+                Err(msg) => eprintln!("{}", Red.paint(format!("Error reading dataref: {}", msg))),
             }
         }
 

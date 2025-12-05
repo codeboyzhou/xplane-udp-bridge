@@ -1,3 +1,4 @@
+use nu_ansi_term::Color::{Cyan, Green, Red};
 use std::io;
 use std::io::ErrorKind;
 use std::net::UdpSocket;
@@ -36,7 +37,14 @@ impl UdpClient {
     /// let client = UdpClient::new("127.0.0.1", 49000, 30)?;
     /// ```
     pub(crate) fn new(host: &str, port: u16, timeout_secs: u64) -> io::Result<Self> {
-        println!("🔗 Connecting to {}:{} with timeout {} seconds", host, port, timeout_secs);
+        println!("{}", "=".repeat(100));
+        println!(
+            "{}",
+            Cyan.paint(format!(
+                "Creating UDP client to server {}:{} with timeout {} seconds",
+                host, port, timeout_secs
+            ))
+        );
 
         let server_addr = format!("{}:{}", host, port);
 
@@ -46,7 +54,7 @@ impl UdpClient {
         // Set socket read timeout
         socket.set_read_timeout(Some(Duration::from_secs(timeout_secs)))?;
 
-        println!("✅  Connected successfully via UDP protocol");
+        println!("{}", Green.paint("Created UDP client successfully"));
 
         Ok(Self { server_addr, socket })
     }
@@ -73,7 +81,7 @@ impl UdpClient {
     pub(crate) fn send_and_recv(&self, data: &[u8]) -> Option<Vec<u8>> {
         // Send data
         if let Err(e) = self.socket.send_to(data, &self.server_addr) {
-            eprintln!("❌ UDP error while sending data: {}", e);
+            eprintln!("{}", Red.paint(format!("UDP error while sending data: {}", e)));
             return None;
         }
 
@@ -84,11 +92,14 @@ impl UdpClient {
             Ok((size, _src)) => Some(buffer[..size].to_vec()),
             Err(ref e) if e.kind() == ErrorKind::TimedOut => {
                 let timeout = self.socket.read_timeout().unwrap().unwrap().as_secs();
-                println!("⏰ UDP request timed out after {} seconds", timeout);
+                println!(
+                    "{}",
+                    Red.paint(format!("UDP request timed out after {} seconds", timeout))
+                );
                 None
             }
             Err(e) => {
-                eprintln!("❌ UDP error while receiving data: {}", e);
+                eprintln!("{}", Red.paint(format!("UDP error while receiving data: {}", e)));
                 None
             }
         }

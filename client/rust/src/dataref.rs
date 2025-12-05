@@ -1,4 +1,5 @@
 use crate::udp::UdpClient;
+use nu_ansi_term::Color::{Cyan, Red, Yellow};
 
 /// A reader for X-Plane data references (datarefs) via UDP communication.
 ///
@@ -52,34 +53,32 @@ impl<'a> DataRefReader<'a> {
     /// ```
     pub(crate) fn read_as_float(&self, data_ref: &str) -> Result<f32, String> {
         let data = format!("dataref|read|float|{}", data_ref);
-        println!("➡️ Sending dataref read request: {}", data);
+        println!("{}", "=".repeat(100));
+        println!("{}", Cyan.paint(format!("Sending dataref read request: {}", data)));
 
         match self.udp_client.send_and_recv(data.as_bytes()) {
             Some(response_body_as_bytes) => {
                 let data = match std::str::from_utf8(response_body_as_bytes.as_slice()) {
                     Ok(data) => {
-                        println!("⬅️ Received dataref read response body: {}", data);
+                        println!(
+                            "{}",
+                            Yellow.paint(format!("Received dataref read response body: {}", data))
+                        );
                         data
                     }
                     Err(e) => {
-                        let err_msg = format!("❌ Failed to parse response body as UTF-8: {:?}", e);
-                        eprintln!("{}", err_msg);
-                        return Err(err_msg);
+                        let msg = Red.paint(format!("Failed to parse response body: {:?}", e));
+                        eprintln!("{}", msg);
+                        return Err(msg.to_string());
                     }
                 };
-                let value = data
-                    .split("|")
-                    .nth(2)
-                    .unwrap_or("0.0")
-                    .parse::<f32>()
-                    .map_err(|e| format!("❌ Error parsing float value: {:?}", e))?;
-                println!("⬅️ Parsed dataref value: {}", value);
+                let value = data.split("|").nth(2).unwrap().parse::<f32>().unwrap();
                 Ok(value)
             }
             None => {
-                let err_msg = "❌ No response from server";
-                eprintln!("{}", err_msg);
-                Err(err_msg.to_string())
+                let msg = Red.paint("No response from server");
+                eprintln!("{}", msg);
+                Err(msg.to_string())
             }
         }
     }
