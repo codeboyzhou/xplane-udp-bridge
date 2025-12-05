@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type UdpClient struct {
@@ -14,7 +17,8 @@ type UdpClient struct {
 }
 
 func NewUdpClient(host string, port, timeoutSecs int) *UdpClient {
-	fmt.Printf("🔗 Connecting to %s:%d with timeout %d seconds\n", host, port, timeoutSecs)
+	fmt.Println(strings.Repeat("=", 100))
+	color.Cyan("Creating UDP client to server %s:%d with timeout %d seconds\n", host, port, timeoutSecs)
 
 	serverAddr := &net.UDPAddr{
 		IP:   net.ParseIP(host),
@@ -24,11 +28,11 @@ func NewUdpClient(host string, port, timeoutSecs int) *UdpClient {
 
 	connection, err := net.DialUDP("udp", nil, serverAddr)
 	if err != nil {
-		fmt.Printf("❌ UDP error while connecting to server: %v\n", err)
+		color.Red("UDP error while creating client: %v\n", err)
 		return nil
 	}
 
-	fmt.Println("✅ Connected successfully via UDP protocol")
+	color.Green("Created UDP client successfully\n")
 
 	return &UdpClient{
 		serverAddr: serverAddr,
@@ -40,13 +44,13 @@ func NewUdpClient(host string, port, timeoutSecs int) *UdpClient {
 func (client *UdpClient) SendAndRecv(data []byte) []byte {
 	_, err := client.connection.Write(data)
 	if err != nil {
-		fmt.Printf("❌ UDP error while sending data: %v\n", err)
+		color.Red("UDP error while sending data: %v\n", err)
 		return nil
 	}
 
 	err = client.connection.SetReadDeadline(time.Now().Add(client.timeout))
 	if err != nil {
-		fmt.Printf("❌ UDP error while setting read deadline: %v\n", err)
+		color.Red("UDP error while setting read deadline: %v\n", err)
 		return nil
 	}
 
@@ -56,9 +60,9 @@ func (client *UdpClient) SendAndRecv(data []byte) []byte {
 	if err != nil {
 		var netErr net.Error
 		if errors.As(err, &netErr) && netErr.Timeout() {
-			fmt.Printf("⏰ UDP request timed out after %.0f seconds\n", client.timeout.Seconds())
+			color.Red("UDP request timed out after %.0f seconds\n", client.timeout.Seconds())
 		} else {
-			fmt.Printf("❌ UDP error while reading data: %v\n", err)
+			color.Red("UDP error while reading data: %v\n", err)
 		}
 		return nil
 	}

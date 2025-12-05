@@ -3,6 +3,7 @@ module github.com/codeboyzhou/xplane-udp-bridge/client
 go 1.25.4
 
 require (
+	github.com/fatih/color v1.18.0
 	github.com/golangci/golangci-lint/v2 v2.7.1
 	golang.org/x/tools v0.39.0
 	mvdan.cc/gofumpt v0.9.2
@@ -62,7 +63,6 @@ require (
 	github.com/denis-tingaikin/go-header v0.5.0 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/ettle/strcase v0.2.0 // indirect
-	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structtag v1.2.0 // indirect
 	github.com/firefart/nonamedreturns v1.0.6 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect

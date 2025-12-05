@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 const InvalidDataRefFloatValue = -666.0
@@ -20,23 +22,25 @@ func NewDataRefReader(client *UdpClient) *DataRefReader {
 
 func (reader *DataRefReader) ReadAsFloat(dataref string) float32 {
 	data := fmt.Sprintf("dataref|read|float|%s", dataref)
-	fmt.Printf("➡️  Sending dataref read request: %s\n", data)
+
+	fmt.Println(strings.Repeat("=", 100))
+	color.Cyan("Sending dataref read request: %s\n", data)
 
 	response := reader.client.SendAndRecv([]byte(data))
 	if response == nil {
-		fmt.Printf("❌ Dataref %s read failed: no response from server\n", dataref)
+		color.Red("Dataref %s read failed: no response from server\n", dataref)
 		return InvalidDataRefFloatValue
 	}
 
 	body := string(response)
-	fmt.Printf("⬅️  Received dataref read response body: %s\n", body)
+	color.Yellow("Received dataref read response body: %s\n", body)
 	value := strings.Split(body, "|")[2]
 	floatValue, err := strconv.ParseFloat(value, 32)
 	if err != nil {
-		fmt.Printf("❌ Error parsing float value: %v\n", err)
+		color.Red("Error parsing float value: %v\n", err)
 		return InvalidDataRefFloatValue
 	}
 
-	fmt.Printf("✅ Dataref %s successfully read as float: %.1f\n", dataref, floatValue)
+	color.Green("Dataref %s successfully read as float: %.1f\n", dataref, floatValue)
 	return float32(floatValue)
 }
