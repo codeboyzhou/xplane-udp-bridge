@@ -1,6 +1,5 @@
 use nu_ansi_term::Color::{Cyan, Green, Red};
 use std::io;
-use std::io::ErrorKind;
 use std::net::UdpSocket;
 use std::time::Duration;
 
@@ -90,14 +89,6 @@ impl UdpClient {
         // Wait for UDP response
         match self.socket.recv_from(&mut buffer) {
             Ok((size, _src)) => Some(buffer[..size].to_vec()),
-            Err(ref e) if e.kind() == ErrorKind::TimedOut => {
-                let timeout = self.socket.read_timeout().unwrap().unwrap().as_secs();
-                println!(
-                    "{}",
-                    Red.paint(format!("UDP request timed out after {} seconds", timeout))
-                );
-                None
-            }
             Err(e) => {
                 eprintln!("{}", Red.paint(format!("UDP error while receiving data: {}", e)));
                 None

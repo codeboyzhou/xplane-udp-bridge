@@ -80,9 +80,6 @@ class UdpClient:
         try:
             response, _ = self.socket.recvfrom(2048)
             return response
-        except TimeoutError:
-            print(colored(f"UDP request timed out after {self.socket.gettimeout()} seconds", "red"))
-            return None
         except Exception as e:
             print(colored(f"UDP error while receiving data: {e}", "red"))
             return None

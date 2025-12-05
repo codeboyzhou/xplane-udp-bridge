@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -58,12 +57,7 @@ func (client *UdpClient) SendAndRecv(data []byte) []byte {
 
 	size, _, err := client.connection.ReadFromUDP(buffer)
 	if err != nil {
-		var netErr net.Error
-		if errors.As(err, &netErr) && netErr.Timeout() {
-			color.Red("UDP request timed out after %.0f seconds\n", client.timeout.Seconds())
-		} else {
-			color.Red("UDP error while reading data: %v\n", err)
-		}
+		color.Red("UDP error while reading data: %v\n", err)
 		return nil
 	}
 
