@@ -80,8 +80,9 @@ func NewUdpClient(host string, port, timeoutSecs int) *UdpClient {
 //   - nil: If an error occurs during sending or receiving.
 //
 // Note:
-//   The method uses a 2048-byte buffer for receiving data, which is
-//   sufficient for typical X-Plane data reference responses.
+//
+//	The method uses a 2048-byte buffer for receiving data, which is
+//	sufficient for typical X-Plane data reference responses.
 func (client *UdpClient) SendAndRecv(data []byte) []byte {
 	_, err := client.connection.Write(data)
 	if err != nil {

@@ -22,7 +22,7 @@ if errorlevel 1 (
 )
 
 :: Run golangci-lint
-golangci-lint run --config .golangci.yml
+golangci-lint run ./main --config .golangci.yml
 if errorlevel 1 (
     echo.
     echo ❌ golangci-lint failed

@@ -5,6 +5,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/fatih/color"
 )
 
 // main is the entry point of the X-Plane UDP bridge client application.
@@ -30,12 +32,18 @@ func main() {
 
 	for {
 		// Read dataref value examples
-		datarefs := []string{
-			"sim/cockpit2/controls/parking_brake_ratio",
+		datarefs := map[string]string{
+			"sim/cockpit2/controls/parking_brake_ratio":    "float",
+			"sim/cockpit2/engine/actuators/throttle_ratio": "float",
+			"sim/cockpit2/engine/actuators/eng_master":     "[int]",
+			"sim/cockpit2/electrical/battery_on":           "[int]",
 		}
 
-		for _, dataref := range datarefs {
-			reader.ReadAsFloat(dataref)
+		for dataref, dataType := range datarefs {
+			value := reader.Read(dataref, dataType)
+			if value != "" {
+				color.Green("Dataref %s successfully read as %s: %s\n", dataref, dataType, value)
+			}
 		}
 
 		// Sleep for a short duration to avoid overloading the server

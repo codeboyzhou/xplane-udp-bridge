@@ -1,64 +1,105 @@
 // Package main implements a UDP bridge client for X-Plane data references.
 // This module provides functionality to read data references from X-Plane
-// through UDP communication.
+// through UDP communication, enabling external applications to access
+// flight simulator data in real-time.
 package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/fatih/color"
 )
 
-// InvalidDataRefFloatValue represents the error value returned when a dataref
-// read operation fails. This constant is used to distinguish between valid
-// zero values and actual read failures.
-const InvalidDataRefFloatValue = -666.0
-
 // DataRefReader provides functionality to read data references from X-Plane
 // through a UDP client connection. It handles the formatting of requests,
 // communication with the server, and parsing of responses.
+//
+// Data references (datarefs) in X-Plane are string identifiers that point to
+// specific simulator variables, such as aircraft position, engine status,
+// or instrument readings. This reader enables external applications to
+// monitor these values in real-time.
 type DataRefReader struct {
-	client *UdpClient
+	client *UdpClient // UDP client for communication with X-Plane
 }
 
 // NewDataRefReader creates a new DataRefReader instance with the provided UDP client.
 // It initializes the reader with the client that will handle the actual UDP communication.
 //
+// This function is the factory for creating DataRefReader instances. The UDP client
+// must already be initialized and connected to X-Plane before creating the reader.
+//
 // Parameters:
 //   - client: A pointer to an initialized UdpClient that will be used for communication.
+//     The client should be configured to connect to X-Plane's UDP interface.
 //
 // Returns:
-//   - A pointer to the newly created DataRefReader instance.
+//   - *DataRefReader: A pointer to the newly created DataRefReader instance.
+//     The returned reader is ready to use for reading data references.
+//
+// Example:
+//
+//	// First create and connect the UDP client
+//	client := NewUdpClient("127.0.0.1", 49000, 5)
+//	if client == nil {
+//	    log.Fatal("Failed to create UDP client")
+//	}
+//
+//	// Then create the dataref reader
+//	reader := NewDataRefReader(client)
+//	value := reader.Read("sim/cockpit2/controls/parking_brake_ratio", "float")
 func NewDataRefReader(client *UdpClient) *DataRefReader {
 	return &DataRefReader{
 		client: client,
 	}
 }
 
-// ReadAsFloat reads a data reference from X-Plane and returns its value as a float32.
+// Read reads a data reference from X-Plane and returns its value as a string.
 // It formats the request, sends it via the UDP client, and parses the response.
 //
-// The method follows the X-Plane UDP protocol format: "dataref|read|float|{dataref}"
+// This method provides a generic interface to read any data reference from X-Plane,
+// regardless of its data type. The caller specifies the expected data type,
+// and the method returns the raw value as a string, which can then be parsed
+// into the appropriate type by the caller.
+//
+// The method follows the X-Plane UDP protocol format: "dataref|read|{type}|{dataref}"
 //
 // Parameters:
 //   - dataref: The string identifier of the X-Plane data reference to read.
+//     These identifiers follow X-Plane's naming convention, such as
+//     "sim/cockpit2/controls/parking_brake_ratio" or "sim/flightmodel/position/latitude".
+//   - dataType: The data type of the data reference. Common values include:
+//     "int", "float", "[int]", "[float]".
+//     The data type must match the actual type of the data reference.
 //
 // Returns:
-//   - float32: The parsed float value from the data reference.
-//   - If the read operation fails or the response cannot be parsed,
-//     returns InvalidDataRefFloatValue (-666.0).
+//   - string: The raw value from the data reference as a string.
+//     For array types, this will be a comma-separated list of values.
+//     For string types, this will be the string value.
+//   - Empty string (""): If the read operation fails or no response is received.
 //
 // Example:
 //
-//	reader := NewDataRefReader(udpClient)
-//	value := reader.ReadAsFloat("sim/cockpit2/gauges/indicators/airspeed_kt_pilot")
-//	if value != InvalidDataRefFloatValue {
-//	    fmt.Printf("Airspeed: %.1f knots\n", value)
+//	// Read a float value
+//	airspeedStr := reader.Read("sim/cockpit2/gauges/indicators/airspeed_kt_pilot", "float")
+//	if airspeedStr != "" {
+//		airspeed, err := strconv.ParseFloat(airspeedStr, 32)
+//		if err == nil {
+//			fmt.Printf("Airspeed: %.1f knots\n", airspeed)
+//		}
 //	}
-func (reader *DataRefReader) ReadAsFloat(dataref string) float32 {
-	data := fmt.Sprintf("dataref|read|float|%s", dataref)
+//
+//	// Read an array of floats
+//	enginesStr := reader.Read("sim/flightmodel/engine/ENGN_thro", "float_array")
+//	if enginesStr != "" {
+//		engines := strings.Split(enginesStr, ",")
+//		for i, engine := range engines {
+//			throttle, _ := strconv.ParseFloat(engine, 32)
+//			fmt.Printf("Engine %d throttle: %.1f%%\n", i+1, throttle*100)
+//		}
+//	}
+func (reader *DataRefReader) Read(dataref, dataType string) string {
+	data := fmt.Sprintf("dataref|read|%s|%s", dataType, dataref)
 
 	fmt.Println(strings.Repeat("=", 100))
 	color.Cyan("Sending dataref read request: %s\n", data)
@@ -66,18 +107,11 @@ func (reader *DataRefReader) ReadAsFloat(dataref string) float32 {
 	response := reader.client.SendAndRecv([]byte(data))
 	if response == nil {
 		color.Red("Dataref %s read failed: no response from server\n", dataref)
-		return InvalidDataRefFloatValue
+		return ""
 	}
 
 	body := string(response)
 	color.Yellow("Received dataref read response body: %s\n", body)
 	value := strings.Split(body, "|")[2]
-	floatValue, err := strconv.ParseFloat(value, 32)
-	if err != nil {
-		color.Red("Error parsing float value: %v\n", err)
-		return InvalidDataRefFloatValue
-	}
-
-	color.Green("Dataref %s successfully read as float: %.1f\n", dataref, floatValue)
-	return float32(floatValue)
+	return value
 }
