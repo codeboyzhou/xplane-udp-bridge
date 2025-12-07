@@ -2,34 +2,27 @@ use crate::error::MockUdpRequestHandlerError;
 use infra::udp::handler::{UdpRequestHandler, UdpRequestHandlerType};
 use infra::udp::request::UdpRequest;
 use std::collections::HashMap;
-use std::fmt::Debug;
-use std::marker::PhantomData;
 use tracing::{error, info};
 
-pub(crate) struct MockDataRefReader<T> {
-    phantom_data: PhantomData<T>,
+pub(crate) struct MockDataRefReader {
     mock_data_refs: HashMap<&'static str, &'static str>,
 }
 
-impl<T> MockDataRefReader<T> {
+impl MockDataRefReader {
     pub(crate) fn new() -> Self {
-        let mut mock_data_refs = HashMap::new();
-        mock_data_refs.insert("sim/cockpit2/controls/parking_brake_ratio", "0.5");
-        Self { phantom_data: PhantomData, mock_data_refs }
+        let mock_data_refs = HashMap::from([
+            ("sim/cockpit2/controls/parking_brake_ratio", "1.0"),
+            ("sim/cockpit2/engine/actuators/throttle_ratio", "0.5"),
+            ("sim/cockpit2/engine/actuators/eng_master", "[0,1]"),
+            ("sim/cockpit2/electrical/battery_on", "[1,1,1]"),
+        ]);
+        Self { mock_data_refs }
     }
 }
 
-impl<T> UdpRequestHandler for MockDataRefReader<T>
-where
-    T: Debug + Send + Sync,
-{
+impl UdpRequestHandler for MockDataRefReader {
     fn get_handler_type(&self) -> UdpRequestHandlerType {
-        let data_type_name = std::any::type_name::<T>();
-        match data_type_name {
-            "i32" => UdpRequestHandlerType::IntDataRefReader,
-            "f32" => UdpRequestHandlerType::FloatDataRefReader,
-            _ => UdpRequestHandlerType::Unsupported,
-        }
+        UdpRequestHandlerType::DataRefReader
     }
 
     fn handle(&self, request: UdpRequest) -> Result<String, Box<dyn std::error::Error>> {

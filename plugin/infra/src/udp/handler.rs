@@ -8,6 +8,5 @@ pub trait UdpRequestHandler: Send + Sync {
 #[derive(Debug, PartialEq)]
 pub enum UdpRequestHandlerType {
     Unsupported,
-    IntDataRefReader,
-    FloatDataRefReader,
+    DataRefReader,
 }

@@ -30,10 +30,12 @@ impl RequestOperation {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RequestDataType {
     Int,
     Float,
+    IntArray,
+    FloatArray,
 }
 
 impl RequestDataType {
@@ -41,6 +43,8 @@ impl RequestDataType {
         match self {
             RequestDataType::Int => "int",
             RequestDataType::Float => "float",
+            RequestDataType::IntArray => "[int]",
+            RequestDataType::FloatArray => "[float]",
         }
     }
 }
@@ -77,6 +81,8 @@ impl UdpRequest {
             data_type: match parts[2] {
                 "int" => RequestDataType::Int,
                 "float" => RequestDataType::Float,
+                "[int]" => RequestDataType::IntArray,
+                "[float]" => RequestDataType::FloatArray,
                 _ => return Err(MismatchedDataType { data_type: parts[2].to_string() }),
             },
             data: parts[3].to_string(),
@@ -84,14 +90,13 @@ impl UdpRequest {
     }
 
     pub(crate) fn determine_handler_type(&self) -> UdpRequestHandlerType {
-        match (&self.request_type, &self.operation, &self.data_type) {
-            (RequestType::DataRef, RequestOperation::Read, RequestDataType::Int) => {
-                UdpRequestHandlerType::IntDataRefReader
-            }
-            (RequestType::DataRef, RequestOperation::Read, RequestDataType::Float) => {
-                UdpRequestHandlerType::FloatDataRefReader
-            }
+        match (&self.request_type, &self.operation) {
+            (RequestType::DataRef, RequestOperation::Read) => UdpRequestHandlerType::DataRefReader,
         }
+    }
+
+    pub fn get_data_type(&self) -> RequestDataType {
+        self.data_type.clone()
     }
 
     pub fn get_data(&self) -> String {

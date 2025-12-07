@@ -23,8 +23,7 @@ impl Plugin for XPlaneUdpBridgePlugin {
     fn start() -> Result<Self, Self::Error> {
         logger::init_file_logger(Self::LOG_FILE_NAME);
         udp::server::start(Self::UDP_SERVER_PORT);
-        udp::server::register_request_handler(Box::new(DataRefReader::<i32>::new()));
-        udp::server::register_request_handler(Box::new(DataRefReader::<f32>::new()));
+        udp::server::register_request_handler(Box::new(DataRefReader::new()));
         Ok(Self {})
     }
 
