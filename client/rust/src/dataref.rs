@@ -31,28 +31,20 @@ impl<'a> DataRefReader<'a> {
         Self { udp_client }
     }
 
-    /// Reads a dataref value as a float.
-    ///
-    /// This method sends a request to read the specified dataref and parses
-    /// the response as a float value.
+    /// Reads a dataref value as a string.
     ///
     /// # Arguments
     ///
-    /// * `data_ref` - The dataref identifier to read (e.g., "sim/cockpit2/gauges/indicators/airspeed_kts_pilot")
+    /// * `data_ref` - The dataref identifier to read
+    /// * `type_str` - The type of the dataref value, e.g., "int", "float", "[int]", "[float]"
     ///
     /// # Returns
     ///
-    /// * `Ok(f32)` - The parsed float value from the dataref
+    /// * `Ok(String)` - The parsed value from the dataref as a string
     /// * `Err(String)` - Error message if the request fails or parsing fails
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let airspeed = reader.read_as_float("sim/cockpit2/gauges/indicators/airspeed_kts_pilot")?;
-    /// println!("Current airspeed: {} knots", airspeed);
-    /// ```
-    pub(crate) fn read_as_float(&self, data_ref: &str) -> Result<f32, String> {
-        let data = format!("dataref|read|float|{}", data_ref);
+    pub(crate) fn read(&self, data_ref: &str, type_str: &str) -> Result<String, String> {
+        let data = format!("dataref|read|{}|{}", type_str, data_ref);
+
         println!("{}", "=".repeat(100));
         println!("{}", Cyan.paint(format!("Sending dataref read request: {}", data)));
 
@@ -72,8 +64,15 @@ impl<'a> DataRefReader<'a> {
                         return Err(msg.to_string());
                     }
                 };
-                let value = data.split("|").nth(2).unwrap().parse::<f32>().unwrap();
-                Ok(value)
+
+                match data.split("|").nth(2) {
+                    Some(value_str) => Ok(value_str.to_string()),
+                    None => {
+                        let msg = Red.paint(format!("Failed to parse dataref value: {}", data));
+                        eprintln!("{}", msg);
+                        Err(msg.to_string())
+                    }
+                }
             }
             None => Err(Red.paint("no response from server").to_string()),
         }

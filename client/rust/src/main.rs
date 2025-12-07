@@ -4,6 +4,7 @@ mod udp;
 use crate::dataref::DataRefReader;
 use crate::udp::UdpClient;
 use nu_ansi_term::Color::{Green, Red};
+use std::collections::HashMap;
 use std::time::Duration;
 
 fn main() {
@@ -13,16 +14,30 @@ fn main() {
     // Create DataRefReader
     let dataref_reader = DataRefReader::new(&client);
 
+    // Read dataref value examples
+    let data_refs = HashMap::from([
+        ("sim/cockpit2/controls/parking_brake_ratio", "float"),
+        ("sim/cockpit2/engine/actuators/throttle_ratio", "float"),
+        ("sim/cockpit2/engine/actuators/eng_master", "[int]"),
+        ("sim/cockpit2/electrical/battery_on", "[int]"),
+    ]);
+
     loop {
-        // Read dataref value examples
-        let data_refs = ["sim/cockpit2/controls/parking_brake_ratio"];
-        for data_ref in data_refs {
-            match dataref_reader.read_as_float(data_ref) {
+        for (data_ref, type_str) in &data_refs {
+            let value = match *type_str {
+                "int" => dataref_reader.read(data_ref, type_str),
+                "float" => dataref_reader.read(data_ref, type_str),
+                "[int]" => dataref_reader.read(data_ref, type_str),
+                "[float]" => dataref_reader.read(data_ref, type_str),
+                _ => Err(format!("Unsupported type {} for dataref {}", type_str, data_ref)),
+            };
+
+            match value {
                 Ok(value) => println!(
                     "{}",
                     Green.paint(format!(
-                        "Dataref {} successfully read as float: {}",
-                        data_ref, value
+                        "Dataref {} successfully read as {}: {}",
+                        data_ref, type_str, value
                     ))
                 ),
                 Err(msg) => {
