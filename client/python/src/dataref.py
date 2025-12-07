@@ -9,7 +9,7 @@ Example:
     >>> from dataref import DataRefReader
     >>> client = UdpClient("127.0.0.1", 49000)
     >>> reader = DataRefReader(client)
-    >>> parking_brake = reader.read_as_float("sim/cockpit2/controls/parking_brake_ratio")
+    >>> parking_brake = reader.read("sim/cockpit2/controls/parking_brake_ratio", "float")
     >>> print(f"Parking brake ratio: {parking_brake}")
 """
 
@@ -42,38 +42,38 @@ class DataRefReader:
         """
         self.client = client
 
-    def read_as_float(self, data_ref: str) -> float | None:
+    def read(self, data_ref: str, type_str: str) -> str | None:
         """
-        Read a data reference as a float value.
+        Read a data reference as a specified value type.
 
-        Sends a request to read the specified data reference from XPlane and returns the value as a float.
+        Sends a request to read the specified data reference from XPlane and returns the value as a string.
         The data reference is a string that identifies a specific variable in XPlane.
 
         Args:
             data_ref (str): Data reference name (e.g., "sim/cockpit2/controls/parking_brake_ratio").
                            These are the standard XPlane dataref identifiers.
+            type_str (str): Type of the data reference (e.g., "int", "float", "[int]", "[float]").
 
         Returns:
-            float | None: The float value of the data reference, or None if the request fails
-                         due to timeout or other communication issues.
+            str | None: The string value of the data reference, or None if the request fails
+                       due to timeout or other communication issues.
 
         Example:
             >>> reader = DataRefReader(client)
-            >>> altitude = reader.read_as_float("sim/cockpit2/gauges/indicators/altitude_ft_pilot")
+            >>> altitude = reader.read("sim/cockpit2/gauges/indicators/altitude_ft_pilot", "float")
             >>> if altitude is not None:
             ...     print(f"Current altitude: {altitude} feet")
             ... else:
             ...     print("Failed to read altitude")
         """
-        data = f"dataref|read|float|{data_ref}"
+        data = f"dataref|read|{type_str}|{data_ref}"
         print("=" * 100)
         print(colored(f"Sending dataref read request: {data}", "cyan"))
         response = self.client.send_and_recv(data.encode())
         if response:
             response_body = response.decode().strip()
             print(colored(f"Received dataref read response body: {response_body}", "yellow"))
-            value = float(response_body.split("|")[-1])
-            print(colored(f"Dataref {data_ref} successfully read as float: {value}", "green"))
+            value = response_body.split("|")[-1]
             return value
         else:
             print(colored(f"Dataref {data_ref} read failed: no response from server", "red"))
