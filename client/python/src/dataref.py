@@ -13,8 +13,11 @@ Example:
     >>> print(f"Parking brake ratio: {parking_brake}")
 """
 
-from udp import UdpClient
+from uuid import uuid4
+
 from termcolor import colored
+
+from udp import UdpClient
 
 
 class DataRefReader:
@@ -66,7 +69,7 @@ class DataRefReader:
             ... else:
             ...     print("Failed to read altitude")
         """
-        data = f"dataref|read|{type_str}|{data_ref}"
+        data = f"{uuid4().hex}|dataref|read|{type_str}|{data_ref}"
         print("=" * 100)
         print(colored(f"Sending dataref read request: {data}", "cyan"))
         response = self.client.send_and_recv(data.encode())
