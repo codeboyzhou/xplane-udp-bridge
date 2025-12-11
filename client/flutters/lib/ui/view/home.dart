@@ -62,7 +62,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
               child: ListView.builder(
                 itemCount: udpViewModel.messages.length,
                 itemBuilder: (context, index) =>
-                    ListTile(title: Text(udpViewModel.messages[index])),
+                    ListTile(title: Text(datarefViewModel.parse(udpViewModel.messages[index]))),
               ),
             ),
 

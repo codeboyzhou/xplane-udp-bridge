@@ -1,51 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutters/viewmodel/udp.dart';
+import 'package:uuid/uuid.dart';
 
 import '../helper.dart';
 
+class DataRef {
+  final String name;
+
+  final String datatype;
+
+  final String description;
+
+  DataRef(this.name, this.datatype, this.description);
+}
+
 class DataRefViewModel extends ChangeNotifier {
-  static const String parkingBrakeRatio = 'sim/cockpit2/controls/parking_brake_ratio';
-  static const String throttleRatio = 'sim/cockpit2/engine/actuators/throttle_ratio';
-  static const String engineMaster = 'sim/cockpit2/engine/actuators/eng_master';
-  static const String batteryOn = 'sim/cockpit2/electrical/battery_on';
+  final List<DataRef> datarefs = [
+    DataRef('sim/cockpit2/controls/parking_brake_ratio', 'float', 'Parking Brake Ratio'),
+    DataRef('sim/cockpit2/engine/actuators/throttle_ratio', 'float', 'Throttle Ratio'),
+    DataRef('sim/cockpit2/engine/actuators/eng_master', '[int]', 'Engine Master'),
+    DataRef('sim/cockpit2/electrical/battery_on', '[int]', 'Battery On'),
+  ];
 
-  static const Map<String, String> datarefs = {
-    parkingBrakeRatio: 'float',
-    throttleRatio: 'float',
-    engineMaster: '[int]',
-    batteryOn: '[int]',
-  };
-
-  static const Map<String, String> datarefValues = {
-    parkingBrakeRatio: '',
-    throttleRatio: '',
-    engineMaster: '',
-    batteryOn: '',
-  };
+  // key: requestId, value: dataref name
+  final Map<String, String> requestIds = {};
 
   final UdpViewModel _udpViewModel;
 
   DataRefViewModel(this._udpViewModel);
 
+  String _generateRequestId() {
+    return Uuid().v4().replaceAll('-', '');
+  }
+
   void readFromUDPServer(String host, int port) {
     final String serverAddress = '$host:$port';
-    datarefs.forEach((dataref, datatype) {
-      final data = 'dataref|read|$datatype|$dataref';
+    for (final dataref in datarefs) {
+      final requestId = _generateRequestId();
+      final data = '$requestId|dataref|read|${dataref.datatype}|${dataref.name}';
       logger.i('Sending dataref read request to $serverAddress: $data');
+      requestIds[requestId] = dataref.name;
       _udpViewModel.send(host, port, data);
-    });
+    }
   }
 
   String parse(String message) {
     final parts = message.split('|');
-    if (parts.length == 4 && parts[0] == 'dataref' && parts[1] == 'read') {
-      final dataref = parts[3];
-      final value = parts[2];
-      if (datarefs.containsKey(dataref)) {
-        datarefValues[dataref] = value;
-        notifyListeners();
-      }
-    }
-    return message;
+    final requestId = parts[0];
+    final value = parts[3];
+    final datarefName = requestIds[requestId];
+    final dataref = datarefs.firstWhere((element) => element.name == datarefName);
+    return '${dataref.description}: $value';
   }
 }
