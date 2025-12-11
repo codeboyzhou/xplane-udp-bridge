@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 nu-ansi-term = "0.50.3"
+uuid = { version = "1.19.0", features = ["v4", "fast-rng"] }

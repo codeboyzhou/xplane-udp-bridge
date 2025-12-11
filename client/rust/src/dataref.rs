@@ -1,5 +1,6 @@
 use crate::udp::UdpClient;
 use nu_ansi_term::Color::{Cyan, Red, Yellow};
+use uuid::Uuid;
 
 /// A reader for X-Plane data references (datarefs) via UDP communication.
 ///
@@ -43,7 +44,8 @@ impl<'a> DataRefReader<'a> {
     /// * `Ok(String)` - The parsed value from the dataref as a string
     /// * `Err(String)` - Error message if the request fails or parsing fails
     pub(crate) fn read(&self, data_ref: &str, type_str: &str) -> Result<String, String> {
-        let data = format!("dataref|read|{}|{}", type_str, data_ref);
+        let request_id = Uuid::new_v4().simple().to_string();
+        let data = format!("{}|dataref|read|{}|{}", request_id, type_str, data_ref);
 
         println!("{}", "=".repeat(100));
         println!("{}", Cyan.paint(format!("Sending dataref read request: {}", data)));
@@ -65,7 +67,7 @@ impl<'a> DataRefReader<'a> {
                     }
                 };
 
-                match data.split("|").nth(2) {
+                match data.split("|").nth(3) {
                     Some(value_str) => Ok(value_str.to_string()),
                     None => {
                         let msg = Red.paint(format!("Failed to parse dataref value: {}", data));
