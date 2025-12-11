@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/google/uuid"
 )
 
 // DataRefReader provides functionality to read data references from X-Plane
@@ -99,7 +100,8 @@ func NewDataRefReader(client *UdpClient) *DataRefReader {
 //		}
 //	}
 func (reader *DataRefReader) Read(dataref, dataType string) string {
-	data := fmt.Sprintf("dataref|read|%s|%s", dataType, dataref)
+	requestId := strings.ReplaceAll(uuid.New().String(), "-", "")
+	data := fmt.Sprintf("%s|dataref|read|%s|%s", requestId, dataType, dataref)
 
 	fmt.Println(strings.Repeat("=", 100))
 	color.Cyan("Sending dataref read request: %s\n", data)
@@ -112,6 +114,6 @@ func (reader *DataRefReader) Read(dataref, dataType string) string {
 
 	body := string(response)
 	color.Yellow("Received dataref read response body: %s\n", body)
-	value := strings.Split(body, "|")[2]
+	value := strings.Split(body, "|")[3]
 	return value
 }

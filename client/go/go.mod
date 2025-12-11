@@ -5,6 +5,7 @@ go 1.25.4
 require (
 	github.com/fatih/color v1.18.0
 	github.com/golangci/golangci-lint/v2 v2.7.1
+	github.com/google/uuid v1.6.0
 	golang.org/x/tools v0.39.0
 	mvdan.cc/gofumpt v0.9.2
 )
