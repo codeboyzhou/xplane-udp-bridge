@@ -60,7 +60,7 @@ pub struct UdpRequest {
 impl UdpRequest {
     pub const MESSAGE_PARTS_SEPARATOR: &'static str = "|";
 
-    const MESSAGE_PARTS_COUNT: usize = 4;
+    const MESSAGE_PARTS_COUNT: usize = 5;
 
     pub(crate) fn new(message: String) -> Result<Self, InvalidUdpRequestError> {
         let parts: Vec<&str> = message.split(Self::MESSAGE_PARTS_SEPARATOR).collect();
@@ -69,23 +69,24 @@ impl UdpRequest {
             return Err(InvalidMessageFormat { message });
         }
 
+        // The first part is the request UUID, which is not used for now
         Ok(Self {
-            request_type: match parts[0] {
+            request_type: match parts[1] {
                 "dataref" => RequestType::DataRef,
-                _ => return Err(UnrecognizedRequestType { request_type: parts[0].to_string() }),
+                _ => return Err(UnrecognizedRequestType { request_type: parts[1].to_string() }),
             },
-            operation: match parts[1] {
+            operation: match parts[2] {
                 "read" => RequestOperation::Read,
-                _ => return Err(UnsupportedOperation { operation: parts[1].to_string() }),
+                _ => return Err(UnsupportedOperation { operation: parts[2].to_string() }),
             },
-            data_type: match parts[2] {
+            data_type: match parts[3] {
                 "int" => RequestDataType::Int,
                 "float" => RequestDataType::Float,
                 "[int]" => RequestDataType::IntArray,
                 "[float]" => RequestDataType::FloatArray,
-                _ => return Err(MismatchedDataType { data_type: parts[2].to_string() }),
+                _ => return Err(MismatchedDataType { data_type: parts[3].to_string() }),
             },
-            data: parts[3].to_string(),
+            data: parts[4].to_string(),
         })
     }
 

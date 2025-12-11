@@ -1,8 +1,8 @@
 use crate::udp::error::UdpRequestHandlerError;
 use crate::udp::handler::UdpRequestHandler;
 use crate::udp::request::UdpRequest;
-use crate::udp::response::Status::InternalServerError;
-use crate::udp::response::{Status, UdpResponse};
+use crate::udp::response::Status::{BadRequest, InternalServerError};
+use crate::udp::response::UdpResponse;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex, OnceLock};
 use tokio::runtime::Runtime;
@@ -58,12 +58,16 @@ impl UdpServer {
                         }
                     };
 
-                    let message = match String::from_utf8(buffer[..size].to_vec()) {
+                    // The first 32 bytes of the buffer are the UUID
+                    let uuid = String::from_utf8(buffer[..32].to_vec()).unwrap();
+
+                    // The rest bytes of the buffer is the message
+                    let message = match String::from_utf8(buffer[32..size].to_vec()) {
                         Ok(message) => message,
                         Err(e) => {
                             let err_msg = format!("UDP server failed to parse message: {:?}", e);
                             error!("{}", err_msg);
-                            let response = UdpResponse::error(Status::BadRequest, err_msg);
+                            let response = UdpResponse::error(uuid, BadRequest, err_msg);
                             Self::send_response(&socket, response, src).await;
                             continue;
                         }
@@ -74,7 +78,7 @@ impl UdpServer {
                         Err(e) => {
                             let err_msg = format!("UDP server failed to parse request: {:?}", e);
                             error!("{}", err_msg);
-                            let response = UdpResponse::error(Status::BadRequest, err_msg);
+                            let response = UdpResponse::error(uuid, BadRequest, err_msg);
                             Self::send_response(&socket, response, src).await;
                             continue;
                         }
@@ -82,12 +86,12 @@ impl UdpServer {
 
                     match thread_safe_server.handle_request(request) {
                         Ok(response) => {
-                            Self::send_response(&socket, UdpResponse::ok(response), src).await
+                            Self::send_response(&socket, UdpResponse::ok(uuid, response), src).await
                         }
                         Err(e) => {
                             let err_msg = format!("UDP server failed to handle request: {:?}", e);
                             error!("{}", err_msg);
-                            let response = UdpResponse::error(InternalServerError, err_msg);
+                            let response = UdpResponse::error(uuid, InternalServerError, err_msg);
                             Self::send_response(&socket, response, src).await
                         }
                     }
