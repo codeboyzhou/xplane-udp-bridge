@@ -1,0 +1,7 @@
+# dependencies
+node_modules/
+
+# Expo framework files
+.expo/
+app-example/
+expo-env.d.ts
