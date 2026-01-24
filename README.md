@@ -1,4 +1,4 @@
-# XPlaneUDPBridge
+# XPlane UDP Bridge
 
 A UDP bridge plugin for X-Plane that enables external applications to communicate with the simulator through UDP protocol. This project provides a robust infrastructure for reading data references (datarefs) from X-Plane and includes client implementations in multiple programming languages.
 
@@ -23,7 +23,7 @@ The plugin allows external applications to read X-Plane data references (dataref
 
 ```
 xplane-udp-bridge/
-├── client/                 # Client implementations
+├── demo/                 # Client demo implementations
 │   ├── go/                # Go client implementation
 │   ├── python/            # Python client implementation
 │   └── rust/              # Rust client implementation
@@ -204,30 +204,23 @@ build.bat
 
 #### Python Client
 ```bash
-cd client/python
-pip install -r requirements.txt
-python src/main.py
+cd demo/python
+uv sync
+uv run src/main.py
 ```
 
 #### Go Client
 ```bash
-cd client/go
+cd demo/go
 go mod tidy
 go run main/main.go
 ```
 
 #### Rust Client
 ```bash
-cd client/rust
+cd demo/rust
 cargo run
 ```
-
-## Configuration
-
-The plugin can be configured through environment variables:
-
-- `UDP_SERVER_PORT`: Port for the UDP server (default: 49000)
-- `LOG_FILE_NAME`: Name of the log file (default: XPlaneUdpBridgePlugin.log)
 
 ## Troubleshooting
 
@@ -239,9 +232,9 @@ The plugin can be configured through environment variables:
 
 ### Debugging
 
-Enable debug logging by checking the log file in the X-Plane plugins directory:
+Enable debug logging by checking the log file in the X-Plane installation directory:
 ```
-<X-Plane Directory>/Resources/plugins/XPlaneUdpBridgePlugin.log
+<X-Plane Directory>/XPlaneUdpBridgePlugin.log
 ```
 
 ## Contributing
