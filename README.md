@@ -58,12 +58,11 @@ xplane-udp-bridge/
 3. Build the plugin:
    ```bash
    cd plugin
+   # This will build and copy the files to the X-Plane plugins directory automatically
    build.bat
    ```
 
-4. Install the plugin:
-   - Copy the built plugin files to your X-Plane plugins directory
-   - Restart X-Plane
+4. Reload the plugin or Restart X-Plane
 
 ## Usage
 
