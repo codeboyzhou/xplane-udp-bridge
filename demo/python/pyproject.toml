@@ -12,7 +12,7 @@ dependencies = [
 dev = [
     "pre-commit>=4.5.0",
     "pyright>=1.1.411",
-    "ruff>=0.14.7",
+    "ruff>=0.16.1",
 ]
 
 [tool.ruff]
