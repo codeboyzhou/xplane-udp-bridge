@@ -5,7 +5,7 @@ description = "Python client for XPlane UDP bridge plugin"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "termcolor>=3.2.0",
+    "termcolor>=3.3.0",
 ]
 
 [dependency-groups]
