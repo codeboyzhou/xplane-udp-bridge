@@ -11,7 +11,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pre-commit>=4.5.0",
-    "pyright>=1.1.407",
+    "pyright>=1.1.411",
     "ruff>=0.14.7",
 ]
 
