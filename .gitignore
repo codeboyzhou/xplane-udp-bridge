@@ -1,0 +1,12 @@
+# jetbrains files
+.idea/
+
+# python cache files
+__pycache__/
+
+# rust build target files
+demo/rust/target/
+plugin/target/
+
+# local environment variables
+.env
